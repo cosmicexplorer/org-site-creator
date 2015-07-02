@@ -14,7 +14,8 @@
       `((,org-proj-name
           :base-directory ,(concat this-dir "org")
           :base-extension "org"
-          :publishing-directory ,(concat this-dir "posts")
+          :publishing-directory ,(concat this-dir "_posts")
+          :recursive t
           :publishing-function org-html-publish-to-html)))
 
 (org-publish-project org-proj-name t)
