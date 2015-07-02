@@ -1,8 +1,5 @@
 #!/bin/sh
-":"; exec emacs --quick --script "$0" -- "$@"
-;; Local Variables:
-;; mode: emacs-lisp
-;; lexical-binding: t
+":"; exec emacs --quick --script "$0" -- "$@" # -*- mode: emacs-lisp -*-
 (pop argv)
 (setq debug-on-error t)
 
