@@ -56,18 +56,26 @@ fs.watch inputDir, recursive: true, (ev, file) ->
     else
       removeAllFilesWildcard outFilePath, { killSelf: yes, filePath: filePath }
 
+openBrowser = ->
+  setTimeout((->
+    setupProc './open_browser_to_url.sh',
+      ["http://localhost:#{jekyllServePort}"]),
+    1000)
+
 # quit on 'q'
 process.stdin.on 'data', (str) ->
-  process.exit() if str.toString().match /^\s*[qQ]/
+  if str.toString().match /^\s*[qQ]/
+    process.exit()
+  else if str.toString().match /^\s*[oO]/
+    openBrowser()
+  else
+    console.error "couldn't parse keyboard input"
 
 # start jekyll serving
 setupProc 'jekyll', ['serve']
 
 # now open the browser (after a short delay)
-setTimeout((->
-  setupProc './open_browser_to_url.sh',
-    ["http://localhost:#{jekyllServePort}"]),
-  1000)
+openBrowser()
 
 process.on 'exit', ->
   childProcs.forEach (proc) ->

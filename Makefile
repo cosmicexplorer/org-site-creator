@@ -10,11 +10,11 @@ JEKYLL_SERVE_PORT := $(shell ./parse_config.sh port $(JEKYLL_CONFIG))
 
 all: $(OUT_PAGES)
 
-html/%.html: org/%.org
+$(OUT_DIR)/%.html: org/%.org
 	./migrate_org.el $(ORG_DIR) $(OUT_DIR) $<
 
 clean:
-	@rm -rf $(OUT_DIR)
+	@find $(OUT_DIR) -name "*.html" -type f -exec rm '{}' ';'
 	@rm -rf $(JEKYLL_OUT)
 
 rebuild:

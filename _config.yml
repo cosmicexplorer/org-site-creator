@@ -1,3 +1,5 @@
-source: html
+source: .
 destination: _site
 port: 4000
+safe: true
+lsi: false
