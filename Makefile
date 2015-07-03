@@ -1,8 +1,9 @@
 .PHONY: all clean serve
 
+JEKYLL_CONFIG_FILE := _config.yml
 ORG_DIR := org
-OUT_DIR := html
-ORG_IN := $(wildcard $(ORG_DIR)/*.org)
+OUT_DIR := $(shell grep "source:" $(JEKYLL_CONFIG_FILE) | sed -e 's/^source://g')
+ORG_IN := $(shell find $(ORG_DIR) -name "*.org")
 OUT_PAGES := $(patsubst $(ORG_DIR)/%.org,$(OUT_DIR)/%.html,$(ORG_IN))
 JEKYLL_OUT := _site
 
@@ -20,4 +21,4 @@ clean:
 
 serve: all
 # insert file-watching logic here
-	@jekyll serve --source $(OUT_DIR)
+	@jekyll serve
