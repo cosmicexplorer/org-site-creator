@@ -2,6 +2,7 @@
 #+AUTHOR: Danny McClanahan
 #+EMAIL: danieldmcclanahan@gmail.com
 #+LANGUAGE: en
+#+OPTIONS: html-postamble:t html-preamble:t
 #+INFOJS_OPT: path: scripts/org-info.js
 #+INFOJS_OPT: toc:t ltoc:above view:info mouse:underline buttons:t
 #+INFOJS_OPT: up: http://cosmicexplorer.github.io/

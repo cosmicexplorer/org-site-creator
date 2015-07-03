@@ -5,6 +5,8 @@
 
 (require 'ox-publish)
 
+;;; styling
+
 ;;; we don't want org to use its cache here since we're using make, but these
 ;;; functions are buggy and throw errors anyway, even when we tell org not to
 ;;; use its cache
@@ -18,6 +20,14 @@
   (setq ad-return-value nil))
 (defun org-font-lock-ensure ()
   (font-lock-fontify-buffer))
+
+(setq org-html-postamble-format
+      (list
+       (list
+        "en"
+        (concat "<div id=\"show_source\"><input type=\"button\" "
+                "value=\"Show Org source\" "
+                "onClick='show_org_source()'></div>"))))
 
 (defun publish-org-file-no-cache (file)
   (if (string-match-p "\\(.*/\\)?\\.?#" file) nil
@@ -42,6 +52,7 @@
              ;; publish html to given directory
              :publishing-directory output-dir
              :publishing-function #'org-html-publish-to-html)
+
             org-static-plist
             (list
              "org-static"
@@ -49,6 +60,7 @@
              :base-extension "css\\|js"
              :publishing-directory output-dir
              :publishing-function #'org-publish-attachment))
+
       (if (not (file-exists-p file))
           (progn
             (when (file-exists-p output-file) (delete-file output-file))

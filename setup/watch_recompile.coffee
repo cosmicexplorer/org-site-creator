@@ -1,37 +1,43 @@
-#!/usr/bin/env coffee
-
-fs = require 'fs'
 path = require 'path'
 spawn = require('child_process').spawn
+watch = require 'node-watch'
 
-[jekyllServePort, emacsScript, htmlize, inputDir, outputDir] = process.argv[2..]
-
-# used because fs.watch keeps reading it as if the file was changed twice
-# whenever the file is saved
-recentlyModified = {}
-recentModificationsTimeout = 200
+[jekyllServePort, rootDir, dirsToWatch...] = process.argv[2..]
 
 childProcs = []
 
 removeProcFromListing = (proc) ->
   childProcs.slice childProcs.indexOf(proc), 1
 
-setupProc = (name, args, cb) ->
+filterByRegex = (reg, out) ->
+  (buf) ->
+    str = buf.toString()
+    out.write str unless str.match reg
+
+setupProc = (name, args, quietRegex, cb) ->
   proc = spawn name, args
   childProcs.push proc
-  proc.stdout.pipe process.stdout
-  proc.stderr.pipe process.stderr
+  if quietRegex
+    proc.stdout.on 'data', filterByRegex quietRegex, process.stdout
+    proc.stderr.on 'data', filterByRegex quietRegex, process.stderr
+  else
+    proc.stdout.pipe process.stdout
+    proc.stderr.pipe process.stderr
   proc.on 'close', (code) ->
     cb?()
     removeProcFromListing proc
 
-fs.watch inputDir, recursive: true, (ev, file) ->
-  filePath = path.join inputDir, file
-  return if recentlyModified[filePath]
-  recentlyModified[filePath] = yes
-  setupProc emacsScript, [htmlize, inputDir, outputDir, filePath], ->
-    setTimeout((-> recentlyModified[filePath] = no),
-          recentModificationsTimeout)
+remake = (filePath) ->
+  console.log "updating from #{filePath}"
+  setupProc 'make', ['-C', path.resolve rootDir], /^make/
+
+ignoreFile = (file) ->
+  path.basename(file).match /^\.?#/
+
+dirsToWatch.forEach (dir) ->
+  watch dir, (file) ->
+    filePath = path.join dir, file
+    remake filePath unless ignoreFile filePath
 
 openBrowser = ->
   setupProc "#{__dirname}/open_browser_to_url.sh",
