@@ -1,4 +1,0 @@
-#+TITLE: first post
-
-* hey
-lol hey
