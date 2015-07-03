@@ -1,1 +1,3 @@
 source: html
+destination: _site
+port: 4000

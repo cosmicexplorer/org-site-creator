@@ -1,24 +1,26 @@
-.PHONY: all clean serve
+.PHONY: all clean rebuild serve
 
-JEKYLL_CONFIG_FILE := _config.yml
+JEKYLL_CONFIG := _config.yml
 ORG_DIR := org
-OUT_DIR := $(shell grep "source:" $(JEKYLL_CONFIG_FILE) | sed -e 's/^source://g')
+OUT_DIR := $(shell ./parse_config.sh source $(JEKYLL_CONFIG))
 ORG_IN := $(shell find $(ORG_DIR) -name "*.org")
 OUT_PAGES := $(patsubst $(ORG_DIR)/%.org,$(OUT_DIR)/%.html,$(ORG_IN))
-JEKYLL_OUT := _site
+JEKYLL_OUT := $(shell ./parse_config.sh destination $(JEKYLL_CONFIG))
+JEKYLL_SERVE_PORT := $(shell ./parse_config.sh port $(JEKYLL_CONFIG))
 
 all: $(OUT_PAGES)
 
-html/%.html: org/%.org | $(OUT_DIR)
+html/%.html: org/%.org
 	./migrate_org.el $(ORG_DIR) $(OUT_DIR) $<
-
-$(OUT_DIR):
-	mkdir $@
 
 clean:
 	@rm -rf $(OUT_DIR)
 	@rm -rf $(JEKYLL_OUT)
 
-serve: all
-# insert file-watching logic here
-	@jekyll serve
+rebuild:
+	$(MAKE) clean
+	$(MAKE) all
+
+serve: rebuild
+	@./watch_recompile.coffee $(JEKYLL_SERVE_PORT) \
+		./migrate_org.el $(ORG_DIR) $(OUT_DIR)
