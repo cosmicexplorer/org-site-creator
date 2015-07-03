@@ -2,11 +2,11 @@
 #+AUTHOR: Danny McClanahan
 #+EMAIL: danieldmcclanahan@gmail.com
 #+LANGUAGE: en
-#+INFOJS_OPT: path: ../scripts/org-info.js
-#+INFOJS_OPT: toc:nil ltoc:above view:info mouse:underline buttons:nil
+#+INFOJS_OPT: path: scripts/org-info.js
+#+INFOJS_OPT: toc:t ltoc:above view:info mouse:underline buttons:t
 #+INFOJS_OPT: up: http://cosmicexplorer.github.io/
 #+INFOJS_OPT: home: http://cosmicexplorer.github.io/
-#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="../styles/stylesheet.css" />
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="styles/org-stylesheet.css" />
 
 * hey
 lol hey

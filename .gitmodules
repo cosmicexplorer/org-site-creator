@@ -1,0 +1,3 @@
+[submodule "htmlize"]
+	path = htmlize
+	url = http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git
