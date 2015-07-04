@@ -25,6 +25,13 @@
 (defun obscure-email-format-string (str class)
   (concat "<a class=\"" class "\">" str "</a>"))
 
+(defvar emacs-url "http://www.gnu.org/software/emacs/")
+(defun emacs-version-string ()
+  (concat "<a href=\"" emacs-url "\">Emacs</a> " emacs-version))
+(defvar org-url "http://orgmode.org")
+(defun org-version-string ()
+  (concat "<a href=\"" org-url "\">Org</a> " (org-version)))
+
 (defadvice org-html-format-spec (around add-my-format-chars activate)
   (let* ((info (ad-get-arg 0))
          (res ad-do-it))
@@ -41,18 +48,25 @@
                     (?f . ,(let ((file (plist-get info :input-file)))
                              (file-name-sans-extension
                               (file-name-nondirectory file))))
-                    (?F . ,(plist-get info :input-file)))))))
+                    (?F . ,(plist-get info :input-file))
+                    (?o . ,(org-version-string))
+                    (?V . ,(emacs-version-string)))))))
 
 (setq org-html-postamble-format
       (list
        (list
         "en"
         (concat
-         "<p class=\"author\">Author: %a %E</p>"
-         "<p class=\"date\">Date: %D</p>"
-         "<p class=\"creator\">%c</p>"
-         "<p class=\"validation\">%v</p>"
-         "<p><a href=\"%f.org.html\">See Org Source</a></p>"))))
+         "<table><tr>"
+         "<td class=\"author\">%a</td>"
+         "<td class=\"source\"><a href=\"%f.org.html\">"
+         "See Org Source</a></td>"
+         "<td class=\"date\">Date: %D</td>"
+         "</tr><tr>"
+         "<td class=\"email\">%E</td>"
+         "<td></td>"
+         "<td class=\"creator\">%V, %o</td>"
+         "</tr></table>"))))
 
 (defun publish-org-file-no-cache (file)
   (if (string-match-p "\\(.*/\\)?\\.?#" file) nil

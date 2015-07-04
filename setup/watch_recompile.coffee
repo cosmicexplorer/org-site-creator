@@ -35,8 +35,6 @@ remake = (filePath) ->
 ignoreFile = (file) ->
   path.basename(file).match /^\.?#/
 
-console.error dirsToWatch
-
 dirsToWatch.forEach (dir) ->
   watch dir, (file) ->
     remake file unless ignoreFile file
