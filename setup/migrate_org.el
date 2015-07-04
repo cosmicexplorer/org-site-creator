@@ -25,7 +25,7 @@
 (defun obscure-email-format-string (str class)
   (concat "<a class=\"" class "\">" str "</a>"))
 
-(defvar emacs-url "http://www.gnu.org/software/emacs/")
+(defvar emacs-url "http://gnu.org/software/emacs/")
 (defun emacs-version-string ()
   (concat "<a href=\"" emacs-url "\">Emacs</a> " emacs-version))
 (defvar org-url "http://orgmode.org")

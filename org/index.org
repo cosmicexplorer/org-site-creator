@@ -4,12 +4,7 @@
 #+LANGUAGE: en
 #+HTML_CONTAINER: div
 #+HTML_DOCTYPE: xhtml-strict
-#+HTML_HEAD:
-#+HTML_HEAD_EXTRA:
-#+HTML_LINK_HOME:
-#+HTML_LINK_UP:
-#+HTML_MATHJAX:
-#+INFOJS_OPT: path: org-info-js/org-info.js
+#+INFOJS_OPT: path: org-info-js/org-info-mini.js
 #+INFOJS_OPT: toc:t ltoc:above view:info mouse:underline buttons:t
 #+INFOJS_OPT: up: http://cosmicexplorer.github.io/
 #+INFOJS_OPT: home: http://cosmicexplorer.github.io/

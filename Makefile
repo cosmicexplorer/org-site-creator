@@ -14,6 +14,7 @@ HTMLIZE_DIR := htmlize
 HTMLIZE_FILE := $(HTMLIZE_DIR)/htmlize.el
 ORG_INFO_DIR := org-info-js
 ORG_INFO_FILE := $(ORG_INFO_DIR)/org-info.js
+ORG_INFO_MINI := $(patsubst %.js,%-mini.js,$(ORG_INFO_FILE))
 SUBMODULES := $(HTMLIZE_DIR) $(ORG_INFO_DIR)
 SUBMODULE_PROOFS := $(HTMLIZE_FILE) $(ORG_INFO_FILE)
 
@@ -40,8 +41,11 @@ all: $(OUT_PAGES) $(OUT_SCRIPTS)
 	@echo "$< => $@"
 	@$(COFFEE_CC) -bc --no-header $<
 
+$(ORG_INFO_MINI): $(ORG_INFO_FILE)
+	$(MAKE) -C $(ORG_INFO_DIR)
+
 MIGRATE_SCRIPT := $(SETUP_DIR)/migrate_org.el
-$(OUT_DIR)/%.html: $(ORG_DIR)/%.org $(DEPS)
+$(OUT_DIR)/%.html: $(ORG_DIR)/%.org $(DEPS) $(ORG_INFO_MINI)
 	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(ORG_DIR) $(OUT_DIR) $<
 
 $(SUBMODULE_PROOFS):
