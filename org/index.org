@@ -9,7 +9,7 @@
 #+HTML_LINK_HOME:
 #+HTML_LINK_UP:
 #+HTML_MATHJAX:
-#+INFOJS_OPT: path: scripts/org-info.js
+#+INFOJS_OPT: path: org-info-js/org-info.js
 #+INFOJS_OPT: toc:t ltoc:above view:info mouse:underline buttons:t
 #+INFOJS_OPT: up: http://cosmicexplorer.github.io/
 #+INFOJS_OPT: home: http://cosmicexplorer.github.io/
@@ -18,7 +18,7 @@
 #+CREATOR: <a href="http://www.gnu.org/software/emacs/">Emacs</a> 25.0.50.7 (<a href="http://orgmode.org">Org</a> mode 8.2.10)
 #+LINK_UP: index.html
 #+LINK_HOME: index.html
-#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="styles/org-stylesheet.css" />
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="org-info-js/stylesheet.css" />
 
 #+BEGIN_HTML
 <script type="text/javascript" src="scripts/out.js"></script>

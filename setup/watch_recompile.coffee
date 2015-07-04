@@ -31,13 +31,15 @@ remake = (filePath) ->
   console.log "updating from #{filePath}"
   setupProc 'make', ['-C', path.resolve rootDir], /^make/
 
+# editor-specific files
 ignoreFile = (file) ->
   path.basename(file).match /^\.?#/
 
+console.error dirsToWatch
+
 dirsToWatch.forEach (dir) ->
   watch dir, (file) ->
-    filePath = path.join dir, file
-    remake filePath unless ignoreFile filePath
+    remake file unless ignoreFile file
 
 openBrowser = ->
   setupProc "#{__dirname}/open_browser_to_url.sh",
