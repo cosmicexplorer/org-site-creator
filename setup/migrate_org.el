@@ -5,12 +5,10 @@
 
 (require 'ox-publish)
 
-;;; styling
-
 ;;; we don't want org to use its cache here since we're using make, but these
 ;;; functions are buggy and throw errors anyway, even when we tell org not to
 ;;; use its cache
-(defadvice org-publish-needed-p (around publish-always-needed activate)
+ (defadvice org-publish-needed-p (around publish-always-needed activate)
   (setq ad-return-value t))
 (defadvice org-publish-cache-set (around no-publish-cache-set activate)
   (setq ad-return-value nil))
@@ -18,16 +16,43 @@
   (setq ad-return-value nil))
 (defadvice org-publish-write-cache-file (around no-write-cache activate)
   (setq ad-return-value nil))
-(defun org-font-lock-ensure ()
-  (font-lock-fontify-buffer))
+(defadvice org-publish-cache-file-needs-publishing (around pub activate)
+  (setq ad-return-value))
+(defun org-font-lock-ensure () (font-lock-fontify-buffer))
+
+(defvar my-org-timestamp-format "%Y-%m-%d@%H:%M:%S")
+
+(defun obscure-email-format-string (str class)
+  (concat "<a class=\"" class "\">" str "</a>"))
+
+(defadvice org-html-format-spec (around add-my-format-chars activate)
+  (let* ((info (ad-get-arg 0))
+         (res ad-do-it))
+    (setq ad-return-value
+          (append res
+                  `((?D . ,(let ((file (plist-get info :input-file)))
+                             (format-time-string
+                              my-org-timestamp-format
+                              (if file (nth 5 (file-attributes file))
+                                (current-time)))))
+                    (?E . ,(obscure-email-format-string
+                            (plist-get info :email)
+                            "format_eval"))
+                    (?f . ,(let ((file (plist-get info :input-file)))
+                             (file-name-sans-extension
+                              (file-name-nondirectory file))))
+                    (?F . ,(plist-get info :input-file)))))))
 
 (setq org-html-postamble-format
       (list
        (list
         "en"
-        (concat "<div id=\"show_source\"><input type=\"button\" "
-                "value=\"Show Org source\" "
-                "onClick='show_org_source()'></div>"))))
+        (concat
+         "<p class=\"author\">Author: %a %E</p>"
+         "<p class=\"date\">Date: %D</p>"
+         "<p class=\"creator\">%c</p>"
+         "<p class=\"validation\">%v</p>"
+         "<p><a href=\"%f.org.html\">See Org Source</a></p>"))))
 
 (defun publish-org-file-no-cache (file)
   (if (string-match-p "\\(.*/\\)?\\.?#" file) nil
@@ -60,14 +85,14 @@
              :base-extension "css\\|js"
              :publishing-directory output-dir
              :publishing-function #'org-publish-attachment))
-
       (if (not (file-exists-p file))
           (progn
             (when (file-exists-p output-file) (delete-file output-file))
             (message "deleted [%s => %s]" file output-file))
         (org-publish-file
          (expand-file-name file)
-         (if (string-match-p "\\.org" file) org-notes-plist org-static-plist) t)
+         (if (string-match-p "\\.org" file) org-notes-plist org-static-plist)
+         t)
         (message "%s => %s" file output-file))
       (when (file-exists-p out-tilde-file) (delete-file out-tilde-file)))))
 

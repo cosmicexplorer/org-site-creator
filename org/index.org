@@ -1,17 +1,31 @@
 #+TITLE: index lol
 #+AUTHOR: Danny McClanahan
-#+EMAIL: danieldmcclanahan@gmail.com
+#+EMAIL: (format "%s@%s.com" "danieldmcclanahan" "gmail")
 #+LANGUAGE: en
-#+OPTIONS: html-postamble:t html-preamble:t
+#+HTML_CONTAINER: div
+#+HTML_DOCTYPE: xhtml-strict
+#+HTML_HEAD:
+#+HTML_HEAD_EXTRA:
+#+HTML_LINK_HOME:
+#+HTML_LINK_UP:
+#+HTML_MATHJAX:
 #+INFOJS_OPT: path: scripts/org-info.js
 #+INFOJS_OPT: toc:t ltoc:above view:info mouse:underline buttons:t
 #+INFOJS_OPT: up: http://cosmicexplorer.github.io/
 #+INFOJS_OPT: home: http://cosmicexplorer.github.io/
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:t html-preamble:t
+#+OPTIONS: html-scripts:t html-style:t html5-fancy:nil tex:t
+#+CREATOR: <a href="http://www.gnu.org/software/emacs/">Emacs</a> 25.0.50.7 (<a href="http://orgmode.org">Org</a> mode 8.2.10)
+#+LINK_UP: index.html
+#+LINK_HOME: index.html
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="styles/org-stylesheet.css" />
+
+#+BEGIN_HTML
+<script type="text/javascript" src="scripts/out.js"></script>
+#+END_HTML
 
 * hey
 lol hey
-[[file:test.org]]
 ** more stuff
 a
 ** stuff
