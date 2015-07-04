@@ -61,12 +61,12 @@ $(NODE_DIR):
 
 JEKYLL_OUT := $(shell $(SETUP_DIR)/parse_config.sh destination $(JEKYLL_CONFIG))
 clean:
-	@rm -f $(OUT_PAGES) $(OUT_SCRIPTS)
+	@rm -f $(OUT_PAGES) $(OUT_SCRIPTS) $(ORG_INFO_DEPS)
 	@rm -rf $(JEKYLL_OUT)
 
 distclean: clean
 	@rm -rf $(NODE_DIR)
-	@git submodule deinit $(SUBMODULES)
+	@git submodule deinit .
 
 rebuild:
 	$(MAKE) clean
