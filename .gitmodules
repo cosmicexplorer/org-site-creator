@@ -1,6 +1,6 @@
 [submodule "htmlize"]
 	path = htmlize
-	url = git@github.com:emacsmirror/htmlize.git
+	url = http://github.com/emacsmirror/htmlize.git
 [submodule "org-info-js"]
 	path = org-info-js
 	url = git@github.com:cosmicexplorer/org-info-js.git
