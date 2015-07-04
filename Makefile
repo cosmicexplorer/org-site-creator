@@ -17,6 +17,7 @@ ORG_INFO_FILE := $(ORG_INFO_DIR)/org-info.js
 ORG_INFO_MINI := $(patsubst %.js,%-mini.js,$(ORG_INFO_FILE))
 SUBMODULES := $(HTMLIZE_DIR) $(ORG_INFO_DIR)
 SUBMODULE_PROOFS := $(HTMLIZE_FILE) $(ORG_INFO_FILE)
+ORG_INFO_RESULTS := $(ORG_INFO_MINI) $(ORG_INFO_DIR)/stylesheet.css
 
 # build scripts
 SETUP_DIR := setup
@@ -30,6 +31,7 @@ ORG_DIR := org
 ORG_IN := $(shell find $(ORG_DIR) -type f)
 OUT_DIR := $(shell $(SETUP_DIR)/parse_config.sh source $(JEKYLL_CONFIG))
 OUT_PAGES := $(patsubst $(ORG_DIR)/%.org,$(OUT_DIR)/%.html,$(ORG_IN))
+ORG_INFO_DEPS := $(patsubst $(ORG_INFO_DIR)/%,$(OUT_DIR)/%,$(ORG_INFO_RESULTS))
 
 SCRIPTS_DIR := scripts
 OUT_SCRIPTS := $(patsubst %.coffee,%.js, \
@@ -41,12 +43,15 @@ all: $(OUT_PAGES) $(OUT_SCRIPTS)
 	@echo "$< => $@"
 	@$(COFFEE_CC) -bc --no-header $<
 
-$(ORG_INFO_MINI): $(ORG_INFO_FILE)
-	$(MAKE) -C $(ORG_INFO_DIR)
-
 MIGRATE_SCRIPT := $(SETUP_DIR)/migrate_org.el
-$(OUT_DIR)/%.html: $(ORG_DIR)/%.org $(DEPS) $(ORG_INFO_MINI)
+$(OUT_DIR)/%.html: $(ORG_DIR)/%.org $(DEPS) $(ORG_INFO_DEPS)
 	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(ORG_DIR) $(OUT_DIR) $<
+
+$(ORG_INFO_DEPS): $(SUBMODULE_PROOFS)
+	@cp $(ORG_INFO_RESULTS) .
+
+$(ORG_INFO_MINI): $(SUBMODULE_PROOFS)
+	$(MAKE) -C $(ORG_INFO_DIR)
 
 $(SUBMODULE_PROOFS):
 	@git submodule update --init --recursive
@@ -61,7 +66,7 @@ clean:
 
 distclean: clean
 	@rm -rf $(NODE_DIR)
-	@git submodule deinit -f $(SUBMODULES)
+	@git submodule deinit $(SUBMODULES)
 
 rebuild:
 	$(MAKE) clean
