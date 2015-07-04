@@ -14,10 +14,9 @@ HTMLIZE_DIR := htmlize
 HTMLIZE_FILE := $(HTMLIZE_DIR)/htmlize.el
 ORG_INFO_DIR := org-info-js
 ORG_INFO_FILE := $(ORG_INFO_DIR)/org-info.js
-ORG_INFO_MINI := $(patsubst %.js,%-mini.js,$(ORG_INFO_FILE))
+
 SUBMODULES := $(HTMLIZE_DIR) $(ORG_INFO_DIR)
 SUBMODULE_PROOFS := $(HTMLIZE_FILE) $(ORG_INFO_FILE)
-ORG_INFO_RESULTS := $(ORG_INFO_MINI) $(ORG_INFO_DIR)/stylesheet.css
 
 # build scripts
 SETUP_DIR := setup
@@ -27,28 +26,52 @@ DEPS := $(HTMLIZE_FILE) $(NODE_DIR) $(wildcard $(SETUP_DIR)/*) \
 # we read from this to setup everything else
 JEKYLL_CONFIG := _config.yml
 
-ORG_DIR := org
-ORG_IN := $(shell find $(ORG_DIR) -type f)
+ORG_PATTERN := -type f -name "*.org"
+ORG_DIR := .
+ORG_IN := $(shell find $(ORG_DIR) $(ORG_PATTERN))
 OUT_DIR := $(shell $(SETUP_DIR)/parse_config.sh source $(JEKYLL_CONFIG))
 OUT_PAGES := $(patsubst $(ORG_DIR)/%.org,$(OUT_DIR)/%.html,$(ORG_IN))
-ORG_INFO_DEPS := $(patsubst $(ORG_INFO_DIR)/%,$(OUT_DIR)/%,$(ORG_INFO_RESULTS))
+
+ORG_INFO_MINI := $(patsubst %.js,%-mini.js,$(ORG_INFO_FILE))
+ORG_INFO_STYLE := $(ORG_INFO_DIR)/stylesheet.css
+ORG_INFO_MINI_OUT := $(patsubst $(ORG_INFO_DIR)/%,$(OUT_DIR)/%,$(ORG_INFO_MINI))
+ORG_INFO_STYLE_OUT := $(patsubst $(ORG_INFO_DIR)/%,$(OUT_DIR)/%, \
+	$(ORG_INFO_STYLE))
+ORG_INFO_DEPS := $(ORG_INFO_MINI_OUT) $(ORG_INFO_STYLE_OUT)
+
+# now htmlize every source file
+GIT_DIR := .git
+HTMLIZE_PATTERN := -type f -not -name "*.html" \
+	-not -iwholename "*$(GIT_DIR)/*" -not -iwholename "*$(NODE_DIR)/*" \
+	-not -iwholename "*$(OUT_DIR)/*"
+HTMLIZE_IN := $(shell find $(CURRENT_DIR) $(HTMLIZE_PATTERN))
+HTMLIZE_OUT := $(patsubst $(ORG_DIR)/%,$(OUT_DIR)/%.html, $(HTMLIZE_IN))
 
 SCRIPTS_DIR := scripts
 OUT_SCRIPTS := $(patsubst %.coffee,%.js, \
 	$(shell find $(SCRIPTS_DIR) -name "*.coffee"))
 
-all: $(OUT_PAGES) $(OUT_SCRIPTS)
+all: $(OUT_PAGES) $(OUT_SCRIPTS) $(HTMLIZE_OUT)
 
 %.js: %.coffee
 	@echo "$< => $@"
 	@$(COFFEE_CC) -bc --no-header $<
 
+HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize_this_file.el
+%.html: %
+	@$(HTMLIZE_SCRIPT) $(HTMLIZE_FILE) $<
+
 MIGRATE_SCRIPT := $(SETUP_DIR)/migrate_org.el
 $(OUT_DIR)/%.html: $(ORG_DIR)/%.org $(DEPS) $(ORG_INFO_DEPS)
 	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(ORG_DIR) $(OUT_DIR) $<
 
-$(ORG_INFO_DEPS): $(SUBMODULE_PROOFS)
-	@cp $(ORG_INFO_RESULTS) .
+$(ORG_INFO_MINI_OUT): $(ORG_INFO_MINI) $(SUBMODULE_PROOFS) $(DEPS)
+	@echo "$< => $@"
+	@cp $< $@
+
+$(ORG_INFO_STYLE_OUT): $(ORG_INFO_STYLE) $(SUBMODULE_PROOFS) $(DEPS)
+	@echo "$< => $@"
+	@cp $< $@
 
 $(ORG_INFO_MINI): $(SUBMODULE_PROOFS)
 	$(MAKE) -C $(ORG_INFO_DIR)
@@ -61,7 +84,8 @@ $(NODE_DIR):
 
 JEKYLL_OUT := $(shell $(SETUP_DIR)/parse_config.sh destination $(JEKYLL_CONFIG))
 clean:
-	@rm -f $(OUT_PAGES) $(OUT_SCRIPTS) $(ORG_INFO_DEPS)
+	@rm -f $(OUT_PAGES) $(OUT_SCRIPTS) $(ORG_INFO_DEPS) $(HTMLIZE_OUT)
+	@$(MAKE) -C $(ORG_INFO_DIR) clean
 	@rm -rf $(JEKYLL_OUT)
 
 distclean: clean

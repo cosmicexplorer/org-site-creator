@@ -1,6 +1,12 @@
 [submodule "htmlize"]
 	path = htmlize
 	url = git@github.com:cosmicexplorer/htmlize.git
+        ignore = dirty
 [submodule "org-info-js"]
 	path = org-info-js
 	url = git@github.com:cosmicexplorer/org-info-js.git
+        ignore = dirty
+[submodule "cosmicexplorer.github.io"]
+	path = cosmicexplorer.github.io
+	url = git@github.com:cosmicexplorer/cosmicexplorer.github.io.git
+        ignore = dirty

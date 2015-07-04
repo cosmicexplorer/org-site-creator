@@ -115,6 +115,8 @@
       (output-dir (car (cddr argv)))
       (file-list (nthcdr 3 argv)))
   ;; this doesn't come by default
-  (load (expand-file-name (concat default-directory htmlize-link)) nil t)
+  (load (if (file-name-absolute-p htmlize-link) htmlize-link
+          (expand-file-name (concat default-directory htmlize-link)))
+        nil t)
   (mapcar #'publish-org-file-no-cache file-list))
 (kill-emacs 0)

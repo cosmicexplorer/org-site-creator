@@ -1,3 +1,4 @@
+#+STARTUP: showeverything
 #+TITLE: index lol
 #+AUTHOR: Danny McClanahan
 #+EMAIL: (format "%s@%s.com" "danieldmcclanahan" "gmail")
@@ -16,6 +17,7 @@
 
 * hey
 lol hey
+[[file:setup/migrate_org.el]]
 ** more stuff
 a
 ** stuff
