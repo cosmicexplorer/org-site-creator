@@ -63,7 +63,9 @@ OUT_STYLES :=
 # now htmlize every source file, and copy other html files
 GIT_DIR := .git
 EXCL_FILE_PATTERN := \( -name "\#*" -or -name "*\~" -or -name ".\#*" \)
+SPECIAL_FILE_PATTERN := -name ".git*"
 PROJ_FILE_PATTERN := -type f -not $(EXCL_FILE_PATTERN) \
+	-not $(SPECIAL_FILE_PATTERN) \
 	$(patsubst %,-not -iwholename "*%/*", $(GIT_DIR) $(NODE_DIR) \
 		$(OUT_DIR) $(ORG_INFO_DIR) $(HTMLIZE_DIR))
 
@@ -73,7 +75,8 @@ HTMLIZE_OUT := $(patsubst %,%.html, \
 	$(shell $(SWITCH_DIR_SCRIPT) $(CURRENT_DIR) $(OUT_DIR) \
 		$(HTMLIZE_IN)))
 
-COPY_PATTERN := $(PROJ_FILE_PATTERN) -name "*.html"
+COPY_EXCL_FILE := \( -name "Makefile" -or -name ".git*" \)
+COPY_PATTERN := $(PROJ_FILE_PATTERN) -not -name "*.html" -not $(COPY_EXCL_FILE)
 COPY_IN := $(shell find $(CURRENT_DIR) $(COPY_PATTERN))
 COPY_OUT := $(shell $(SWITCH_DIR_SCRIPT) $(CURRENT_DIR) $(OUT_DIR) $(COPY_IN))
 
