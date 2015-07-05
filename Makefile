@@ -4,6 +4,9 @@
 THIS_MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 CURRENT_DIR := $(patsubst %/,%,$(dir $(THIS_MAKEFILE_PATH)))
 
+# turn paths relative
+RELIFY_CMD := perl -e 'use File::Spec; print File::Spec->abs2rel(@ARGV) . "\n"'
+
 # npm
 NODE_DIR := node_modules
 NPM_BIN = $(shell npm bin)
@@ -16,7 +19,7 @@ NODE_DEPS = $(COFFEE_CC) $(UGLIFY_JS)
 # submodules
 HTMLIZE_DIR := htmlize
 HTMLIZE_FILE := $(HTMLIZE_DIR)/htmlize.el
-HTMLIZE_PROOF := $(HTMLIZE_DIR)README.md
+HTMLIZE_PROOF := $(HTMLIZE_DIR)/README.md
 ORG_INFO_DIR := org-info-js
 ORG_INFO_FILE := $(ORG_INFO_DIR)/org-info.js
 ORG_STYLE_FILE := $(ORG_INFO_DIR)/stylesheet.css
@@ -31,7 +34,7 @@ SUBMODULE_PROOFS := $(HTMLIZE_PROOF) $(ORG_INFO_PROOF) $(ORG_MODE_FILE)
 
 # build scripts
 SETUP_DIR := $(CURRENT_DIR)/setup
-DEPS := $(HTMLIZE_FILE) $(NODE_DEPS) $(wildcard $(SETUP_DIR)/*) \
+DEPS := $(SUBMODULE_PROOFS) $(NODE_DEPS) $(wildcard $(SETUP_DIR)/*) \
 	$(THIS_MAKEFILE_PATH)
 
 # we read from this to setup everything else
@@ -86,11 +89,11 @@ all: $(OUT_PAGES) $(OUT_SCRIPTS) $(OUT_STYLES) $(HTMLIZE_OUT) \
 	$(HTMLIZE_MAKEFILE) $(COPY_OUT) $(ORG_INFO_OUT) | $(OUT_DIRS)
 
 $(OUT_DIRS):
-	mkdir -p $@
+	mkdir -p $(shell $(RELIFY_CMD) $@)
 
 # scripts
 $(OUT_SCRIPTS_DIR)/%.js: $(SCRIPTS_DIR)/%.coffee | $(OUT_SCRIPTS_DIR)
-	@echo "$< => $@"
+	@echo "$< => $(shell $(RELIFY_CMD) $@)"
 	@$(COFFEE_CC) -bcp --no-header $< | $(UGLIFY_JS) $(UGLIFY_JS_OPTS) > $@
 $(OUT_SCRIPTS_DIR)/%.js: $(ORG_INFO_DIR)/%-mini.js
 	@echo "$< => $@"
@@ -107,7 +110,8 @@ $(OUT_STYLES_DIR)/%.css: $(ORG_INFO_DIR)/%-mini.css
 # make the minified versions
 $(ORG_INFO_OUT): $(ORG_INFO_PROOF) $(ORG_INFO_OUT_DIR)
 	@$(MAKE) -C $(ORG_INFO_DIR)
-	@echo "[" $(ORG_INFO_DIR)/*-mini* "] => ($(ORG_INFO_OUT_DIR))"
+	@echo "[" $(ORG_INFO_DIR)/*-mini* "] =>" \
+		"($(shell $(RELIFY_CMD) $(ORG_INFO_OUT_DIR)))"
 	@cp $(ORG_INFO_DIR)/*-mini* $(ORG_INFO_OUT_DIR)
 
 # make html from org
@@ -123,9 +127,8 @@ HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize_file.sh \
 HTMLIZE_OUT_FILE := $(SETUP_DIR)/output-file
 COLOR_THEME_FILE := $(COLOR_THEME_DIR)/color-theme.el
 $(HTMLIZE_OUT): $(HTMLIZE_IN)
-	@for el in $(HTMLIZE_OUT_FILE)  $(CURRENT_DIR)/$(ORG_MODE_FILE) \
-		$(CURRENT_DIR)/$(HTMLIZE_FILE) $(COLOR_THEME_FILE) \
-		$(MY_COLOR_THEME_FILE) $(ORG_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
+	@for el in $(HTMLIZE_OUT_FILE) $(CURRENT_DIR)/$(HTMLIZE_FILE) \
+		$(ORG_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
 		do echo $$el >> $(HTMLIZE_TMP_FILE); done
 	@$(HTMLIZE_SCRIPT) 2>/dev/null
 	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'

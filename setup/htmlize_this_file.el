@@ -29,8 +29,7 @@
              (if (string-match "[^\\]\"\\([^\"]+\\(\\\\\\)*\\)\"" str)
                  (match-string 1 str) nil)))
         (if uri
-            (format
-             "%s%s%s"
+            (concat
              (substring str 0 (match-beginning 1))
              (replace-regexp-in-string "\\`file:" "" uri)
              (substring str (match-end 1)))
@@ -88,13 +87,10 @@
     (setq ad-return-value (car org-publish-project-alist)))
 
   (let ((output-file (car argv))
-        (org-mode-link (cadr argv))
-        (htmlize-link (car (cddr argv)))
-        (color-theme-link (car (nthcdr 3 argv)))
-        (color-theme-me-link (car (nthcdr 4 argv)))
-        (input-dir (expand-file-name (car (nthcdr 5 argv))))
-        (output-dir (expand-file-name (car (nthcdr 6 argv))))
-        (input-files (nthcdr 7 argv)))
+        (htmlize-link (cadr argv))
+        (input-dir (expand-file-name (car (cddr argv))))
+        (output-dir (expand-file-name (car (nthcdr 3 argv))))
+        (input-files (nthcdr 4 argv)))
     (load-file-link htmlize-link)
     (require 'htmlize)
     (mapcar #'htmlize-this-file input-files))
