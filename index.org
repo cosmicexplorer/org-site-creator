@@ -5,14 +5,14 @@
 #+LANGUAGE: en
 #+HTML_CONTAINER: div
 #+HTML_DOCTYPE: xhtml-strict
-#+INFOJS_OPT: path:org-info-mini.js
+#+INFOJS_OPT: path:org-info-js/org-info-mini.js
 #+INFOJS_OPT: toc:t ltoc:above view:info mouse:underline buttons:t
 #+INFOJS_OPT: up:http://cosmicexplorer.github.io/
 #+INFOJS_OPT: home:http://cosmicexplorer.github.io/
 #+OPTIONS: html-postamble:t html-preamble:t
 #+LINK_UP: //index.html
 #+LINK_HOME: //index.html
-#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="stylesheet.css" />
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="org-info-js/stylesheet-mini.css" />
 #+HTML_HEAD: <script type="text/javascript" src="scripts/out.js"></script>
 
 * hey

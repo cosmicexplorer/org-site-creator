@@ -10,3 +10,7 @@
 	path = cosmicexplorer.github.io
 	url = git@github.com:cosmicexplorer/cosmicexplorer.github.io.git
         ignore = dirty
+[submodule "emacs-color-themes"]
+	path = emacs-color-themes
+        url = git@github.com:cosmicexplorer/emacs-color-themes.git
+        ignore = dirty

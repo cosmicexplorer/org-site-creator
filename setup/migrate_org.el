@@ -1,7 +1,7 @@
 #!/bin/sh
 ":"; exec emacs --quick --script "$0" -- "$@" # -*- mode: emacs-lisp -*-
-(pop argv)
-(setq debug-on-error t)
+(load (concat (file-name-directory load-file-name)
+              "emacs-script-common.el") nil t)
 
 (require 'ox-publish)
 
@@ -70,53 +70,50 @@
 
 (defun publish-org-file-no-cache (file)
   (if (string-match-p "\\(.*/\\)?\\.?#" file) nil
-    (let* ((output-file
-            (file-relative-name
-             (concat
-              output-dir
-              (replace-regexp-in-string
-               "\\.org$" ".html"
-               (replace-regexp-in-string
-                (concat "^" (regexp-quote (expand-file-name input-dir)))
-                ""
-                (expand-file-name file))))))
-           (out-tilde-file (concat output-file "~")))
-      (setq org-notes-plist
-            (list
-             "org-notes"
-             ;; read org source from "org/" subdirectory
-             :base-directory input-dir
-             ;; only read org files
-             :base-extension "org"
-             ;; publish html to given directory
-             :publishing-directory output-dir
-             :publishing-function #'org-html-publish-to-html)
-
-            org-static-plist
-            (list
-             "org-static"
-             :base-directory input-dir
-             :base-extension "css\\|js"
-             :publishing-directory output-dir
-             :publishing-function #'org-publish-attachment))
-      (if (not (file-exists-p file))
-          (progn
-            (when (file-exists-p output-file) (delete-file output-file))
-            (message "deleted [%s => %s]" file output-file))
-        (org-publish-file
-         (expand-file-name file)
-         (if (string-match-p "\\.org" file) org-notes-plist org-static-plist)
-         t)
-        (message "%s => %s" file output-file))
-      (when (file-exists-p out-tilde-file) (delete-file out-tilde-file)))))
+    (let ((file-buf (find-file (expand-file-name file))))
+      (with-current-buffer file-buf
+        (let* ((output-file
+                (expand-file-name
+                 (concat
+                  output-dir "/"
+                  (replace-regexp-in-string
+                   (regexp-quote
+                    (let ((common-root output-dir))
+                      (while (not
+                              (string-match-p (regexp-quote common-root) file))
+                        (setq common-root (file-name-directory common-root)))
+                      common-root))
+                   "" file))))
+               (out-tilde-file (concat output-file "~")))
+          (if (not (file-exists-p file))
+              (progn
+                (when (file-exists-p output-file) (delete-file output-file))
+                (print-stdout "%s => %s" (file-relative-name file input-dir)
+                              (file-relative-name output-file input-dir)))
+            (setq org-publish-project-alist
+                  (list
+                   (list
+                    "org"
+                    ;; read org source from "org/" subdirectory
+                    :base-directory (file-name-directory file)
+                    ;; only read org files
+                    :base-extension "org"
+                    :recursive t
+                    ;; publish html to given directory
+                    :publishing-directory
+                    (file-name-directory output-file)
+                    :publishing-function #'org-html-publish-to-html)))
+            (org-publish-current-file t)
+            (print-stdout "%s => %s" (file-relative-name file input-dir)
+                          (file-relative-name output-file input-dir)))
+          (when (file-exists-p out-tilde-file) (delete-file out-tilde-file))))
+      (kill-buffer file-buf))))
 
 (let ((htmlize-link (car argv))
-      (input-dir (cadr argv))
-      (output-dir (car (cddr argv)))
-      (file-list (nthcdr 3 argv)))
-  ;; this doesn't come by default
-  (load (if (file-name-absolute-p htmlize-link) htmlize-link
-          (expand-file-name (concat default-directory htmlize-link)))
-        nil t)
+      (input-dir (expand-file-name (car (cdr argv))))
+      (output-dir (expand-file-name (car (cddr argv))))
+      (file-list (mapcar #'expand-file-name (nthcdr 3 argv))))
+  (load-file-link htmlize-link)
+  (require 'htmlize)
   (mapcar #'publish-org-file-no-cache file-list))
 (kill-emacs 0)

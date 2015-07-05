@@ -1,5 +1,0 @@
-source: .
-destination: cosmicexplorer.github.io
-port: 4000
-safe: true
-lsi: false
