@@ -1,4 +1,4 @@
-.PHONY: all clean distclean rebuild serve
+.PHONY: all clean sweep distclean rebuild serve
 .DELETE_ON_ERROR:
 
 THIS_MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -24,13 +24,13 @@ ORG_INFO_PROOF := $(ORG_INFO_DIR)/README.md
 MY_COLOR_THEME_DIR := $(CURRENT_DIR)/emacs-color-themes
 MY_COLOR_THEME_FILE := $(MY_COLOR_THEME_DIR)/color-theme-danny.el
 ORG_MODE_DIR := org-mode
-ORG_MODE_FILE := $(ORG_MODE_DIR)/org-mode.el
+ORG_MODE_FILE := $(ORG_MODE_DIR)/lisp/org.el
 
 SUBMODULES := $(HTMLIZE_DIR) $(ORG_INFO_DIR) $(MY_COLOR_THEME_DIR)
 SUBMODULE_PROOFS := $(HTMLIZE_PROOF) $(ORG_INFO_PROOF) $(ORG_MODE_FILE)
 
 # build scripts
-SETUP_DIR := setup
+SETUP_DIR := $(CURRENT_DIR)/setup
 DEPS := $(HTMLIZE_FILE) $(NODE_DEPS) $(wildcard $(SETUP_DIR)/*) \
 	$(THIS_MAKEFILE_PATH)
 
@@ -39,7 +39,7 @@ JEKYLL_CONFIG := _config.yml
 
 SWITCH_DIR_SCRIPT := $(SETUP_DIR)/switch-dir.sh
 
-OUT_DIR := cosmicexplorer.github.io
+OUT_DIR := $(CURRENT_DIR)/cosmicexplorer.github.io
 ORG_PATTERN := -type f -name "*.org" \
 	$(patsubst %,-not -iwholename "*%/*", $(ORG_INFO_DIR) \
 		$(ORG_MODE_DIR) $(OUT_DIR))
@@ -60,18 +60,19 @@ OUT_STYLES :=
 # now htmlize every source file, and copy other html files
 GIT_DIR := .git
 COLOR_THEME_DIR := $(CURRENT_DIR)/color-theme-6.6.0
-PROJ_FILE_PATTERN := -type f \
+EXCL_FILE_PATTERN := \( -name "\#*" -or -name "*\~" -or -name ".\#*" \)
+PROJ_FILE_PATTERN := -type f -not $(EXCL_FILE_PATTERN) \
 	$(patsubst %,-not -iwholename "*%/*", $(GIT_DIR) $(NODE_DIR) \
 		$(OUT_DIR) $(ORG_INFO_DIR) $(MY_COLOR_THEME_DIR) \
 		$(HTMLIZE_DIR) $(COLOR_THEME_DIR) $(ORG_MODE_DIR))
 
-HTMLIZE_PATTERN := -not -name "*.html" $(PROJ_FILE_PATTERN)
+HTMLIZE_PATTERN := $(PROJ_FILE_PATTERN) -not -name "*.html"
 HTMLIZE_IN := $(shell find $(CURRENT_DIR) $(HTMLIZE_PATTERN))
 HTMLIZE_OUT := $(patsubst %,%.html, \
 	$(shell $(SWITCH_DIR_SCRIPT) $(CURRENT_DIR) $(OUT_DIR) \
 		$(HTMLIZE_IN)))
 
-COPY_PATTERN := -name "*.html" $(PROJ_FILE_PATTERN)
+COPY_PATTERN := $(PROJ_FILE_PATTERN) -name "*.html"
 COPY_IN := $(shell find $(CURRENT_DIR) $(COPY_PATTERN))
 COPY_OUT := $(shell $(SWITCH_DIR_SCRIPT) $(CURRENT_DIR) $(OUT_DIR) $(COPY_IN))
 
@@ -116,15 +117,18 @@ $(OUT_PAGES): $(ORG_IN) $(DEPS)
 		1>&2 2>/dev/null
 
 # htmlize
-HTMLIZE_TMP_FILE := tmpfile
+HTMLIZE_TMP_FILE := $(SETUP_DIR)/tmpfile
 HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize_file.sh \
 	$(shell cat $(CURRENT_DIR)/.xvfb.config) $(HTMLIZE_TMP_FILE)
+HTMLIZE_OUT_FILE := $(SETUP_DIR)/output-file
 COLOR_THEME_FILE := $(COLOR_THEME_DIR)/color-theme.el
 $(HTMLIZE_OUT): $(HTMLIZE_IN)
-	@for el in $(ORG_MODE_FILE) $(HTMLIZE_FILE) $(COLOR_THEME_FILE) \
+	@for el in $(HTMLIZE_OUT_FILE)  $(CURRENT_DIR)/$(ORG_MODE_FILE) \
+		$(CURRENT_DIR)/$(HTMLIZE_FILE) $(COLOR_THEME_FILE) \
 		$(MY_COLOR_THEME_FILE) $(ORG_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
 		do echo $$el >> $(HTMLIZE_TMP_FILE); done
 	@$(HTMLIZE_SCRIPT) 2>/dev/null
+	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
 
 # create submodules and dependent packages
 $(SUBMODULE_PROOFS):
@@ -132,11 +136,13 @@ $(SUBMODULE_PROOFS):
 $(NODE_DEPS):
 	@npm install
 
-clean: $(DEPS)
+clean: $(DEPS) sweep
 	@$(MAKE) -C $(ORG_INFO_DIR) clean
 	@$(MAKE) -C $(OUT_DIR) clean
-	@find . -type f -name "*~" -exec rm '{}' ';'
-	@find . -type f -name "#*" -exec rm '{}' ';'
+	@rm -f $(HTMLIZE_TMP_FILE)
+
+sweep:
+	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
 
 distclean: clean
 	@rm -rf $(NODE_DIR)

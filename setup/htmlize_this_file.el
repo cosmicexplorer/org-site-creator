@@ -1,6 +1,3 @@
-;;; has to be run in graphical mode to get the right colors, hence the xvfb
-;;; shenanigans
-
 (load (concat (file-name-directory load-file-name)
               "emacs-script-common.el") nil t)
 
@@ -12,23 +9,50 @@
 
 (defun add-header ()
   (goto-char (point-min))
-  ;; (insert (or (and (boundp 'comment-start) comment-start) "")
-  ;;         (format "%s %s" "This file was generated from" (buffer-file-name))
-  ;;         (or (and (boundp 'comment-end) comment-end) "") "\n")
-   )
-(defun modify-links ())
+  (insert
+   (format
+    "%s %%%% %s %s %%%%%s\n"
+    (or (and (boundp 'comment-start) comment-start) "")
+    "This file was generated from"
+    (propertize
+     (file-name-nondirectory (buffer-file-name))
+     'htmlize-link
+     (list :uri (format "file:%s"
+                        (file-name-nondirectory (buffer-file-name)))))
+    (or (and (boundp 'comment-end) comment-end) ""))))
 
-(let* ((tmpbuf (find-file (concat default-directory "tmpfile")))
-       (output-file (concat default-directory "output-file"))
+(defun remove-file-from-a-href (str)
+  "Removes any \"file:\" designations from a given anchor tag of the form
+<a href=\"... Meant to work on the result of `htmlize-format-link'."
+  (if (string-match-p (concat "\\`" (regexp-quote "<a href=\"")) str)
+      (let ((uri
+             (if (string-match "[^\\]\"\\([^\"]+\\(\\\\\\)*\\)\"" str)
+                 (match-string 1 str) nil)))
+        (if uri
+            (format
+             "%s%s%s"
+             (substring str 0 (match-beginning 1))
+             (replace-regexp-in-string "\\`file:" "" uri)
+             (substring str (match-end 1)))
+          str))
+    str))
+
+(defadvice htmlize-format-link (around transform-file-links activate)
+  (setq ad-return-value (remove-file-from-a-href ad-do-it)))
+
+(defvar this-dir (file-name-directory load-file-name))
+
+(let* ((tmpbuf (find-file (concat this-dir "tmpfile")))
        (argv
         (split-string
          (with-current-buffer tmpbuf (buffer-string)))))
   (kill-buffer tmpbuf)
   (defun htmlize-this-file (file)
     (setq file (expand-file-name file))
-    (let ((common-root output-dir))
+    (let ((common-root (expand-file-name output-dir)))
       (while (not (string-match-p (regexp-quote common-root) file))
-        (setq common-root (file-name-directory common-root)))
+        (setq common-root (expand-file-name
+                           (concat common-root "/.."))))
       (let* ((outfile-nonhtml
               (expand-file-name
                (concat
@@ -43,8 +67,11 @@
           (insert (format
                    (concat "%s => %s"
                            (if (makefile-p file) ".html" "{,.html}") "\n")
-                   (file-relative-name file)
-                   (file-relative-name outfile-nonhtml)))
+                   (file-relative-name
+                    file (expand-file-name (concat this-dir "/..")))
+                   (file-relative-name
+                    outfile-nonhtml
+                    (expand-file-name (concat this-dir "/..")))))
           (append-to-file (point-min) (point-max) output-file))
         (kill-buffer
          (let ((buf
@@ -52,8 +79,6 @@
                   (add-header)
                   (current-buffer))))
            (with-current-buffer (htmlize-buffer buf)
-             (kill-buffer buf)
-             (modify-links)
              (write-file outfile)
              (current-buffer))))
         (unless (makefile-p file)
@@ -62,21 +87,15 @@
   (defadvice org-publish-get-project-from-filename (around ew activate)
     (setq ad-return-value (car org-publish-project-alist)))
 
-  (let ((htmlize-link (car argv))
+  (let ((output-file (car argv))
         (org-mode-link (cadr argv))
-        (color-theme-link (car (cddr argv)))
-        (color-theme-me-link (car (nthcdr 3 argv)))
-        (input-dir (expand-file-name (car (nthcdr 4 argv))))
-        (output-dir (expand-file-name (car (nthcdr 5 argv))))
-        (input-files (nthcdr 6 argv)))
-    (load-file-link org-mode-link)
-    (require 'org)
+        (htmlize-link (car (cddr argv)))
+        (color-theme-link (car (nthcdr 3 argv)))
+        (color-theme-me-link (car (nthcdr 4 argv)))
+        (input-dir (expand-file-name (car (nthcdr 5 argv))))
+        (output-dir (expand-file-name (car (nthcdr 6 argv))))
+        (input-files (nthcdr 7 argv)))
     (load-file-link htmlize-link)
     (require 'htmlize)
-    (load-file-link color-theme-link)
-    (require 'color-theme)
-    (load-file-link color-theme-me-link)
-    (require 'color-theme-danny)
-    (color-theme-danny)
     (mapcar #'htmlize-this-file input-files))
   (kill-emacs 0))
