@@ -19,9 +19,11 @@ ORG_STYLE_FILE := $(ORG_INFO_DIR)/stylesheet.css
 ORG_INFO_PROOF := $(ORG_INFO_DIR)/README.md
 MY_COLOR_THEME_DIR := $(CURRENT_DIR)/emacs-color-themes
 MY_COLOR_THEME_FILE := $(MY_COLOR_THEME_DIR)/color-theme-danny.el
+ORG_MODE_DIR := org-mode
+ORG_MODE_FILE := $(ORG_MODE_DIR)/org-mode.el
 
 SUBMODULES := $(HTMLIZE_DIR) $(ORG_INFO_DIR) $(MY_COLOR_THEME_DIR)
-SUBMODULE_PROOFS := $(HTMLIZE_PROOF) $(ORG_INFO_PROOF)
+SUBMODULE_PROOFS := $(HTMLIZE_PROOF) $(ORG_INFO_PROOF) $(ORG_MODE_FILE)
 
 # build scripts
 SETUP_DIR := setup
@@ -32,7 +34,8 @@ JEKYLL_CONFIG := _config.yml
 
 SWITCH_DIR_SCRIPT := $(SETUP_DIR)/switch-dir.sh
 
-ORG_PATTERN := -type f -name "*.org" -not -iwholename "*$(ORG_INFO_DIR)/*"
+ORG_PATTERN := -type f -name "*.org" -not -iwholename "*$(ORG_INFO_DIR)/*" \
+	-not -iwholename "*$(ORG_MODE_DIR)*"
 ORG_DIR := $(CURRENT_DIR)
 ORG_IN := $(shell find $(ORG_DIR) $(ORG_PATTERN) | sort | uniq)
 OUT_DIR := cosmicexplorer.github.io
@@ -54,7 +57,7 @@ COLOR_THEME_DIR := $(CURRENT_DIR)/color-theme-6.6.0
 PROJ_FILE_PATTERN := -type f \
 	$(patsubst %,-not -iwholename "*%/*", $(GIT_DIR) $(NODE_DIR) \
 		$(OUT_DIR) $(ORG_INFO_DIR) $(MY_COLOR_THEME_DIR) \
-		$(HTMLIZE_DIR) $(COLOR_THEME_DIR))
+		$(HTMLIZE_DIR) $(COLOR_THEME_DIR) $(ORG_MODE_DIR))
 
 HTMLIZE_PATTERN := -not -name "*.html" $(PROJ_FILE_PATTERN)
 HTMLIZE_IN := $(shell find $(CURRENT_DIR) $(HTMLIZE_PATTERN))
@@ -112,7 +115,7 @@ HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize_file.sh \
 	$(shell cat $(CURRENT_DIR)/xvfb.config) $(HTMLIZE_TMP_FILE)
 COLOR_THEME_FILE := $(COLOR_THEME_DIR)/color-theme.el
 $(HTMLIZE_OUT): $(HTMLIZE_IN)
-	@for el in $(HTMLIZE_FILE) $(COLOR_THEME_FILE) \
+	@for el in $(ORG_MODE_FILE) $(HTMLIZE_FILE) $(COLOR_THEME_FILE) \
 		$(MY_COLOR_THEME_FILE) $(ORG_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
 		do echo $$el >> $(HTMLIZE_TMP_FILE); done
 	@$(HTMLIZE_SCRIPT) 2>/dev/null
