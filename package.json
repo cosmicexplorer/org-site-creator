@@ -1,5 +1,6 @@
 {
   "repository": "https://github.com/cosmicexplorer/cosmicexplorer.github.io",
+  "license": "GPL-3.0",
   "devDependencies": {
     "coffee-script": "^1.9.3",
     "node-watch": "^0.3.4",

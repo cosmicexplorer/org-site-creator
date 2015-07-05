@@ -141,7 +141,7 @@ sweep:
 
 distclean: clean
 	@rm -rf $(NODE_DIR)
-	@git submodule deinit $(CURRENT_DIR)
+	@git submodule deinit -f $(CURRENT_DIR)
 
 rebuild:
 	$(MAKE) clean
