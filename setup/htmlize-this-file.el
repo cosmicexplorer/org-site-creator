@@ -70,6 +70,7 @@
           (kill-buffer
            (let ((buf
                   (with-current-buffer (find-file file)
+                    (normal-mode)
                     (add-header)
                     (current-buffer))))
              (with-current-buffer (htmlize-buffer buf)

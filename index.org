@@ -17,7 +17,12 @@
 
 * hey
 lol hey
-[[file:setup/htmlize-this-file.el]]
+
+Here's some code from [[file:setup/htmlize-this-file.el]]:
+#+BEGIN_SRC emacs-lisp
+(message "%s" "what a triumph!")
+#+END_SRC
+
 ** more stuff
 a
 http://google.com
