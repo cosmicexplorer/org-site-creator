@@ -75,15 +75,19 @@
         (let* ((output-file
                 (expand-file-name
                  (concat
-                  output-dir "/"
-                  (replace-regexp-in-string
-                   (regexp-quote
-                    (let ((common-root output-dir))
-                      (while (not
-                              (string-match-p (regexp-quote common-root) file))
-                        (setq common-root (file-name-directory common-root)))
-                      common-root))
-                   "" file))))
+                  (file-name-sans-extension
+                   (concat
+                    output-dir "/"
+                    (replace-regexp-in-string
+                     (regexp-quote
+                      (let ((common-root output-dir))
+                        (while
+                            (not (string-match-p (regexp-quote common-root)
+                                                 file))
+                          (setq common-root (file-name-directory common-root)))
+                        common-root))
+                     "" file)))
+                  ".html")))
                (out-tilde-file (concat output-file "~")))
           (if (not (file-exists-p file))
               (progn

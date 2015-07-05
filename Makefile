@@ -8,6 +8,10 @@ CURRENT_DIR := $(patsubst %/,%,$(dir $(THIS_MAKEFILE_PATH)))
 NODE_DIR := node_modules
 NPM_BIN = $(shell npm bin)
 COFFEE_CC = $(NPM_BIN)/coffee
+UGLIFY_JS = $(NPM_BIN)/uglifyjs
+UGLIFY_JS_OPTS := -mc --screw-ie8 2>/dev/null
+
+NODE_DEPS = $(COFFEE_CC) $(UGLIFY_JS)
 
 # submodules
 HTMLIZE_DIR := htmlize
@@ -27,18 +31,20 @@ SUBMODULE_PROOFS := $(HTMLIZE_PROOF) $(ORG_INFO_PROOF) $(ORG_MODE_FILE)
 
 # build scripts
 SETUP_DIR := setup
-DEPS := $(HTMLIZE_FILE) $(NODE_DIR) $(wildcard $(SETUP_DIR)/*)
+DEPS := $(HTMLIZE_FILE) $(NODE_DEPS) $(wildcard $(SETUP_DIR)/*) \
+	$(THIS_MAKEFILE_PATH)
 
 # we read from this to setup everything else
 JEKYLL_CONFIG := _config.yml
 
 SWITCH_DIR_SCRIPT := $(SETUP_DIR)/switch-dir.sh
 
-ORG_PATTERN := -type f -name "*.org" -not -iwholename "*$(ORG_INFO_DIR)/*" \
-	-not -iwholename "*$(ORG_MODE_DIR)*"
+OUT_DIR := cosmicexplorer.github.io
+ORG_PATTERN := -type f -name "*.org" \
+	$(patsubst %,-not -iwholename "*%/*", $(ORG_INFO_DIR) \
+		$(ORG_MODE_DIR) $(OUT_DIR))
 ORG_DIR := $(CURRENT_DIR)
 ORG_IN := $(shell find $(ORG_DIR) $(ORG_PATTERN) | sort | uniq)
-OUT_DIR := cosmicexplorer.github.io
 OUT_PAGES := $(patsubst %.org, %.html, \
 	$(shell $(SWITCH_DIR_SCRIPT) $(CURRENT_DIR) $(OUT_DIR) $(ORG_IN)))
 
@@ -82,9 +88,9 @@ $(OUT_DIRS):
 	mkdir -p $@
 
 # scripts
-$(OUT_SCRIPTS_DIR)/%.js: $(SCRIPTS_DIR)/%.coffee
+$(OUT_SCRIPTS_DIR)/%.js: $(SCRIPTS_DIR)/%.coffee | $(OUT_SCRIPTS_DIR)
 	@echo "$< => $@"
-	@$(COFFEE_CC) -bc --no-header -o $(OUT_SCRIPTS_DIR) $<
+	@$(COFFEE_CC) -bcp --no-header $< | $(UGLIFY_JS) $(UGLIFY_JS_OPTS) > $@
 $(OUT_SCRIPTS_DIR)/%.js: $(ORG_INFO_DIR)/%-mini.js
 	@echo "$< => $@"
 	@cp $< $@
@@ -112,7 +118,7 @@ $(OUT_PAGES): $(ORG_IN) $(DEPS)
 # htmlize
 HTMLIZE_TMP_FILE := tmpfile
 HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize_file.sh \
-	$(shell cat $(CURRENT_DIR)/xvfb.config) $(HTMLIZE_TMP_FILE)
+	$(shell cat $(CURRENT_DIR)/.xvfb.config) $(HTMLIZE_TMP_FILE)
 COLOR_THEME_FILE := $(COLOR_THEME_DIR)/color-theme.el
 $(HTMLIZE_OUT): $(HTMLIZE_IN)
 	@for el in $(ORG_MODE_FILE) $(HTMLIZE_FILE) $(COLOR_THEME_FILE) \
@@ -123,13 +129,14 @@ $(HTMLIZE_OUT): $(HTMLIZE_IN)
 # create submodules and dependent packages
 $(SUBMODULE_PROOFS):
 	@git submodule update --init --recursive
-$(NODE_DIR):
+$(NODE_DEPS):
 	@npm install
 
 clean: $(DEPS)
 	@$(MAKE) -C $(ORG_INFO_DIR) clean
 	@$(MAKE) -C $(OUT_DIR) clean
 	@find . -type f -name "*~" -exec rm '{}' ';'
+	@find . -type f -name "#*" -exec rm '{}' ';'
 
 distclean: clean
 	@rm -rf $(NODE_DIR)

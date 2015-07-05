@@ -2,6 +2,7 @@
   "repository": "https://github.com/cosmicexplorer/cosmicexplorer.github.io",
   "devDependencies": {
     "coffee-script": "^1.9.3",
-    "node-watch": "^0.3.4"
+    "node-watch": "^0.3.4",
+    "uglify-js": "^2.4.23"
   }
 }

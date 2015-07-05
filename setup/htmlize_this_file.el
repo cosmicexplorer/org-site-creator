@@ -1,3 +1,6 @@
+;;; has to be run in graphical mode to get the right colors, hence the xvfb
+;;; shenanigans
+
 (load (concat (file-name-directory load-file-name)
               "emacs-script-common.el") nil t)
 
@@ -6,6 +9,14 @@
 (defun makefile-p (file)
   (string-equal (file-name-sans-extension (file-name-nondirectory file))
                 "Makefile"))
+
+(defun add-header ()
+  (goto-char (point-min))
+  ;; (insert (or (and (boundp 'comment-start) comment-start) "")
+  ;;         (format "%s %s" "This file was generated from" (buffer-file-name))
+  ;;         (or (and (boundp 'comment-end) comment-end) "") "\n")
+   )
+(defun modify-links ())
 
 (let* ((tmpbuf (find-file (concat default-directory "tmpfile")))
        (output-file (concat default-directory "output-file"))
@@ -35,9 +46,18 @@
                    (file-relative-name file)
                    (file-relative-name outfile-nonhtml)))
           (append-to-file (point-min) (point-max) output-file))
-        (htmlize-file (expand-file-name file) outfile)
+        (kill-buffer
+         (let ((buf
+                (with-current-buffer (find-file file)
+                  (add-header)
+                  (current-buffer))))
+           (with-current-buffer (htmlize-buffer buf)
+             (kill-buffer buf)
+             (modify-links)
+             (write-file outfile)
+             (current-buffer))))
         (unless (makefile-p file)
-          (copy-file (expand-file-name file) outfile-nonhtml t t t t)))))
+          (copy-file file outfile-nonhtml t t t t)))))
 
   (defadvice org-publish-get-project-from-filename (around ew activate)
     (setq ad-return-value (car org-publish-project-alist)))
