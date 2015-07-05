@@ -24,13 +24,9 @@ ORG_INFO_DIR := org-info-js
 ORG_INFO_FILE := $(ORG_INFO_DIR)/org-info.js
 ORG_STYLE_FILE := $(ORG_INFO_DIR)/stylesheet.css
 ORG_INFO_PROOF := $(ORG_INFO_DIR)/README.md
-MY_COLOR_THEME_DIR := $(CURRENT_DIR)/emacs-color-themes
-MY_COLOR_THEME_FILE := $(MY_COLOR_THEME_DIR)/color-theme-danny.el
-ORG_MODE_DIR := org-mode
-ORG_MODE_FILE := $(ORG_MODE_DIR)/lisp/org.el
 
-SUBMODULES := $(HTMLIZE_DIR) $(ORG_INFO_DIR) $(MY_COLOR_THEME_DIR)
-SUBMODULE_PROOFS := $(HTMLIZE_PROOF) $(ORG_INFO_PROOF) $(ORG_MODE_FILE)
+SUBMODULES := $(HTMLIZE_DIR) $(ORG_INFO_DIR)
+SUBMODULE_PROOFS := $(HTMLIZE_PROOF) $(ORG_INFO_PROOF)
 
 # build scripts
 SETUP_DIR := $(CURRENT_DIR)/setup
@@ -44,8 +40,7 @@ SWITCH_DIR_SCRIPT := $(SETUP_DIR)/switch-dir.sh
 
 OUT_DIR := $(CURRENT_DIR)/cosmicexplorer.github.io
 ORG_PATTERN := -type f -name "*.org" \
-	$(patsubst %,-not -iwholename "*%/*", $(ORG_INFO_DIR) \
-		$(ORG_MODE_DIR) $(OUT_DIR))
+	$(patsubst %,-not -iwholename "*%/*", $(ORG_INFO_DIR) $(OUT_DIR))
 ORG_DIR := $(CURRENT_DIR)
 ORG_IN := $(shell find $(ORG_DIR) $(ORG_PATTERN) | sort | uniq)
 OUT_PAGES := $(patsubst %.org, %.html, \
@@ -62,12 +57,10 @@ OUT_STYLES :=
 
 # now htmlize every source file, and copy other html files
 GIT_DIR := .git
-COLOR_THEME_DIR := $(CURRENT_DIR)/color-theme-6.6.0
 EXCL_FILE_PATTERN := \( -name "\#*" -or -name "*\~" -or -name ".\#*" \)
 PROJ_FILE_PATTERN := -type f -not $(EXCL_FILE_PATTERN) \
 	$(patsubst %,-not -iwholename "*%/*", $(GIT_DIR) $(NODE_DIR) \
-		$(OUT_DIR) $(ORG_INFO_DIR) $(MY_COLOR_THEME_DIR) \
-		$(HTMLIZE_DIR) $(COLOR_THEME_DIR) $(ORG_MODE_DIR))
+		$(OUT_DIR) $(ORG_INFO_DIR) $(HTMLIZE_DIR))
 
 HTMLIZE_PATTERN := $(PROJ_FILE_PATTERN) -not -name "*.html"
 HTMLIZE_IN := $(shell find $(CURRENT_DIR) $(HTMLIZE_PATTERN))
@@ -125,7 +118,6 @@ HTMLIZE_TMP_FILE := $(SETUP_DIR)/tmpfile
 HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize_file.sh \
 	$(shell cat $(CURRENT_DIR)/.xvfb.config) $(HTMLIZE_TMP_FILE)
 HTMLIZE_OUT_FILE := $(SETUP_DIR)/output-file
-COLOR_THEME_FILE := $(COLOR_THEME_DIR)/color-theme.el
 $(HTMLIZE_OUT): $(HTMLIZE_IN)
 	@for el in $(HTMLIZE_OUT_FILE) $(CURRENT_DIR)/$(HTMLIZE_FILE) \
 		$(ORG_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
