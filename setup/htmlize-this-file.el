@@ -3,10 +3,6 @@
 
 (setq enable-local-variables nil)
 
-(defun makefile-p (file)
-  (string-equal (file-name-sans-extension (file-name-nondirectory file))
-                "Makefile"))
-
 (defun add-header ()
   (goto-char (point-min))
   (insert
@@ -21,25 +17,12 @@
                         (file-name-nondirectory (buffer-file-name)))))
     (or (and (boundp 'comment-end) comment-end) ""))))
 
-(defun remove-file-from-a-href (str)
-  "Removes any \"file:\" designations from a given anchor tag of the form
-<a href=\"... Meant to work on the result of `htmlize-format-link'."
-  (if (string-match-p (concat "\\`" (regexp-quote "<a href=\"")) str)
-      (let ((uri
-             (if (string-match "[^\\]\"\\([^\"]+\\(\\\\\\)*\\)\"" str)
-                 (match-string 1 str) nil)))
-        (if uri
-            (concat
-             (substring str 0 (match-beginning 1))
-             (replace-regexp-in-string "\\`file:" "" uri)
-             (substring str (match-end 1)))
-          str))
-    str))
-
-(defadvice htmlize-format-link (around transform-file-links activate)
-  (setq ad-return-value (remove-file-from-a-href ad-do-it)))
-
 (defvar this-dir (file-name-directory load-file-name))
+
+;;; TODO: remove this hack
+(defun makefile-p (file)
+  (string-equal (file-name-sans-extension (file-name-nondirectory file))
+                "Makefile"))
 
 (let* ((tmpbuf (find-file (concat this-dir "tmpfile")))
        (argv
@@ -65,23 +48,39 @@
         (with-temp-buffer
           (insert (format
                    (concat "%s => %s"
-                           (if (makefile-p file) ".html" "{,.html}") "\n")
+                           (cond ((or (and (file-newer-than-file-p file outfile)
+                                           (file-newer-than-file-p
+                                            file outfile-nonhtml))
+                                      (file-newer-than-file-p
+                                       load-file-name file))
+                                  "{,.html}")
+                                 ((file-newer-than-file-p file outfile) ".html")
+                                 ((file-newer-than-file-p file outfile-nonhtml)
+                                  "")
+                                 (t " (already exists)"))
+                           "\n")
                    (file-relative-name
                     file (expand-file-name (concat this-dir "/..")))
                    (file-relative-name
                     outfile-nonhtml
                     (expand-file-name (concat this-dir "/..")))))
           (append-to-file (point-min) (point-max) output-file))
-        (kill-buffer
-         (let ((buf
-                (with-current-buffer (find-file file)
-                  (add-header)
-                  (current-buffer))))
-           (with-current-buffer (htmlize-buffer buf)
-             (write-file outfile)
-             (current-buffer))))
-        (unless (makefile-p file)
-          (copy-file file outfile-nonhtml t t t t)))))
+        (when (or (file-newer-than-file-p file outfile)
+                  (file-newer-than-file-p load-file-name file))
+          (kill-buffer
+           (let ((buf
+                  (with-current-buffer (find-file file)
+                    (add-header)
+                    (current-buffer))))
+             (with-current-buffer (htmlize-buffer buf)
+               (write-file outfile)
+               (current-buffer))))
+          (format-links-in-file "n" outfile))
+        (when (and (not (makefile-p file))
+                   (or (file-newer-than-file-p file outfile-nonhtml)
+                       (file-newer-than-file-p load-file-name file)))
+          (copy-file file outfile-nonhtml t t t t))
+        (call-process "touch" nil nil nil outfile outfile-nonhtml))))
 
   (defadvice org-publish-get-project-from-filename (around ew activate)
     (setq ad-return-value (car org-publish-project-alist)))

@@ -30,4 +30,4 @@ function finish {
 }
 
 trap finish EXIT
-TERM="xterm" DISPLAY="$1" emacs -l "$WORKING_DIR/htmlize_this_file.el"
+TERM="xterm" DISPLAY="$1" emacs -l "$WORKING_DIR/htmlize-this-file.el"

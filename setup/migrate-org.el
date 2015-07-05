@@ -89,27 +89,30 @@
                      "" file)))
                   ".html")))
                (out-tilde-file (concat output-file "~")))
-          (if (not (file-exists-p file))
+          (if (or (file-newer-than-file-p file output-file)
+                  (file-newer-than-file-p load-file-name file))
               (progn
-                (when (file-exists-p output-file) (delete-file output-file))
+                (setq org-publish-project-alist
+                      (list
+                       (list
+                        "org"
+                        ;; read org source from "org/" subdirectory
+                        :base-directory (file-name-directory file)
+                        ;; only read org files
+                        :base-extension "org"
+                        :recursive t
+                        ;; publish html to given directory
+                        :publishing-directory
+                        (file-name-directory output-file)
+                        :publishing-function #'org-html-publish-to-html)))
+                (org-publish-current-file t)
+                (format-links-in-file "y" output-file)
                 (print-stdout "%s => %s" (file-relative-name file input-dir)
                               (file-relative-name output-file input-dir)))
-            (setq org-publish-project-alist
-                  (list
-                   (list
-                    "org"
-                    ;; read org source from "org/" subdirectory
-                    :base-directory (file-name-directory file)
-                    ;; only read org files
-                    :base-extension "org"
-                    :recursive t
-                    ;; publish html to given directory
-                    :publishing-directory
-                    (file-name-directory output-file)
-                    :publishing-function #'org-html-publish-to-html)))
-            (org-publish-current-file t)
-            (print-stdout "%s => %s" (file-relative-name file input-dir)
-                          (file-relative-name output-file input-dir)))
+            (print-stdout "%s => %s (already exists)"
+                          (file-relative-name file input-dir)
+                          (file-relative-name output-file input-dir))
+            (call-process "touch" nil nil nil output-file))
           (when (file-exists-p out-tilde-file) (delete-file out-tilde-file))))
       (kill-buffer file-buf))))
 

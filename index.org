@@ -17,7 +17,7 @@
 
 * hey
 lol hey
-[[file:setup/migrate_org.el]]
+[[file:setup/htmlize-this-file.el]]
 ** more stuff
 a
 http://google.com

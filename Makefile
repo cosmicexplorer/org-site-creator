@@ -16,6 +16,11 @@ UGLIFY_JS_OPTS := -mc --screw-ie8 2>/dev/null
 
 NODE_DEPS = $(COFFEE_CC) $(UGLIFY_JS)
 
+# cpan
+HTML_PARSER = $(shell if perl -e 'use HTML::TokeParser::Simple'; then echo; \
+	else echo "HTML_TokeParser_Simple"; fi) # blank if installed
+PERL_DEPS = $(HTML_PARSER)
+
 # submodules
 HTMLIZE_DIR := htmlize
 HTMLIZE_FILE := $(HTMLIZE_DIR)/htmlize.el
@@ -30,8 +35,8 @@ SUBMODULE_PROOFS := $(HTMLIZE_PROOF) $(ORG_INFO_PROOF)
 
 # build scripts
 SETUP_DIR := $(CURRENT_DIR)/setup
-DEPS := $(SUBMODULE_PROOFS) $(NODE_DEPS) $(wildcard $(SETUP_DIR)/*) \
-	$(THIS_MAKEFILE_PATH)
+DEPS := $(SUBMODULE_PROOFS) $(NODE_DEPS) $(PERL_DEPS) \
+	$(wildcard $(SETUP_DIR)/*) $(THIS_MAKEFILE_PATH)
 
 # we read from this to setup everything else
 JEKYLL_CONFIG := _config.yml
@@ -108,20 +113,20 @@ $(ORG_INFO_OUT): $(ORG_INFO_PROOF) $(ORG_INFO_OUT_DIR)
 	@cp $(ORG_INFO_DIR)/*-mini* $(ORG_INFO_OUT_DIR)
 
 # make html from org
-MIGRATE_SCRIPT := $(SETUP_DIR)/migrate_org.el
+MIGRATE_SCRIPT := $(SETUP_DIR)/migrate-org.el
 $(OUT_PAGES): $(ORG_IN) $(DEPS)
 	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(ORG_DIR) $(OUT_DIR) $(ORG_IN) \
 		1>&2 2>/dev/null
 
 # htmlize
 HTMLIZE_TMP_FILE := $(SETUP_DIR)/tmpfile
-HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize_file.sh \
+HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize-file.sh \
 	$(shell cat $(CURRENT_DIR)/.xvfb.config) $(HTMLIZE_TMP_FILE)
 HTMLIZE_OUT_FILE := $(SETUP_DIR)/output-file
 $(HTMLIZE_OUT): $(HTMLIZE_IN)
 	@for el in $(HTMLIZE_OUT_FILE) $(CURRENT_DIR)/$(HTMLIZE_FILE) \
 		$(ORG_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
-		do echo $$el >> $(HTMLIZE_TMP_FILE); done
+		do echo "$$el"; done > $(HTMLIZE_TMP_FILE)
 	@$(HTMLIZE_SCRIPT) 2>/dev/null
 	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
 
@@ -131,13 +136,16 @@ $(SUBMODULE_PROOFS):
 $(NODE_DEPS):
 	@npm install
 
+$(HTML_PARSER):
+	@cpan HTML::TokeParser::Simple
+
+sweep:
+	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
+
 clean: $(DEPS) sweep
 	@$(MAKE) -C $(ORG_INFO_DIR) clean
 	@$(MAKE) -C $(OUT_DIR) clean
 	@rm -f $(HTMLIZE_TMP_FILE)
-
-sweep:
-	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
 
 distclean: clean
 	@rm -rf $(NODE_DIR)
