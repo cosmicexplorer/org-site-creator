@@ -11,3 +11,9 @@ A truly disgusting hack to put together a site from a bunch of org files. To use
   - `highlight_css`: [y/n]. use if you want to enable the default css for highlightjs usage.
   - `export_email`: [y/f/n]. format to export email addresses at bottom of org pages: y for standard, f to allow the use of an emacs lisp `format` command instead of a standard email address (see [this example repo](http://cosmicexplorer.github.io) for an example).
   - `org_info`: use org_info.js and associated css. this is kinda the point of using this repo, so there's no real reason not to have it on.
+
+Some gotchas include:
+
+1. It makes three directories in your specified output directory; `styles`, `scripts`, and `org-info-js`. Don't put anything in these, since they'll be deleted whenever you remake.
+2. `indir` and `outdir` can be literally anything you want, including the same thing, including each other, etc.
+3. It takes like a minute to run which is kind of annoying.
