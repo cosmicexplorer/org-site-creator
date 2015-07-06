@@ -187,6 +187,9 @@
                       ;; TODO: make up point to site map
                       :sitemap-title "Site Map")))
 
+              ;; TODO: allow for setup files n stuff
+              ;; TODO: make better highlight css
+
               (org-publish-current-file t)  ; goes to output-file
               (let ((sitemap-in
                      (expand-file-name (concat input-dir "/" sitemap-filename)))
