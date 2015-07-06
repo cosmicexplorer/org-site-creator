@@ -126,11 +126,12 @@ $(OUT_STYLES_DIR)/%.css: $(ORG_INFO_DIR)/%-mini.css | $(OUT_SCRIPTS_DIR)
 	@echo "$< => $@"
 	@cp $< $@
 
-# make the minified versions
+# make the minified versions (note that these are all copied as a batch)
 $(ORG_INFO_OUT): $(ORG_INFO_PROOF) $(ORG_INFO_OUT_DIR)
 	@$(MAKE) -C $(ORG_INFO_DIR)
-	@echo "[" $(ORG_INFO_DIR)/*-mini* "] =>" \
-		"($(shell $(RELIFY_CMD) $(ORG_INFO_OUT_DIR)))"
+	@for el in $(ORG_INFO_DIR)/*-mini*; do \
+		echo "$$el => $$($(RELIFY_CMD) $$($(SWITCH_DIR_SCRIPT) \
+			$(ORG_INFO_DIR) $(ORG_INFO_OUT_DIR) $$el))"; done
 	@cp $(ORG_INFO_DIR)/*-mini* $(ORG_INFO_OUT_DIR)
 
 # make html from org

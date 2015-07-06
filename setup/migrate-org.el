@@ -115,6 +115,17 @@
 
 (defvar sitemap-filename "sitemap.org")
 
+(defun re-seq (regexp string &optional num)
+  "list of all regexp matches in a string"
+  (unless num (setq num 0))
+  (save-match-data
+    (let ((pos 0)
+          matches)
+      (while (string-match regexp string pos)
+        (push (match-string num string) matches)
+        (setq pos (match-end num)))
+      matches)))
+
 (defun publish-org-file-no-cache (file)
   (let ((file-buf (find-file (expand-file-name file))))
     (with-current-buffer file-buf
@@ -128,7 +139,15 @@
                    (regexp-quote input-dir)
                    "" file)))
                 ".html")))
-             (out-tilde-file (concat output-file "~")))
+             (out-tilde-file (concat output-file "~"))
+             (sitemap-in
+              (expand-file-name (concat input-dir "/" sitemap-filename)))
+             (sitemap-out
+              (expand-file-name
+               (concat
+                (file-name-sans-extension
+                 (concat output-dir "/" sitemap-filename))
+                ".html"))))
         (if (or (file-newer-than-file-p file output-file)
                 (file-newer-than-file-p load-file-name file)
                 (file-newer-than-file-p transform-file-links-binary file))
@@ -148,7 +167,7 @@
                       :publishing-function #'org-html-publish-to-html
                       :html-preamble t
                       :html-postamble t
-                      :html5-fancy t
+                      :html-html5-fancy t
                       :tex t
                       :html-scripts t
                       :html-style t
@@ -174,43 +193,60 @@
                                           (file-name-directory output-file))
                                          highlightjs-init)
                       :infojs-opt
-                      (format infojs-opts-format-string
-                              (file-relative-name
-                               (org-info-js-js)
-                               (file-name-directory output-file))
-                              (file-name-nondirectory output-file)
-                              (file-name-nondirectory output-file))
+                      (let ((indexfile (expand-file-name
+                                        (concat input-dir "/"
+                                                "index.org")))
+                            (index-htmlfile
+                             (expand-file-name (concat output-dir "/"
+                                                       "index.html")))
+                            (infojs-opt-additions
+                             (mapconcat
+                              #'identity
+                              (re-seq "^#\\+INFOJS_OPTS:\\( .*\\)"
+                                      (buffer-string) 1) " ")))
+                        (concat
+                         ;; add #+INFOJS_OPTS: to preempt given options
+                         infojs-opt-additions " "
+                         (format infojs-opts-format-string
+                                 (file-relative-name
+                                  (org-info-js-js)
+                                  (file-name-directory output-file))
+                                 (if (file-exists-p indexfile)
+                                     (file-relative-name
+                                      index-htmlfile
+                                      (file-name-directory output-file))
+                                   (file-name-nondirectory (buffer-file-name)))
+                                 (if (file-exists-p indexfile)
+                                     (file-relative-name
+                                      index-htmlfile
+                                      (file-name-directory output-file))
+                                   (file-name-nondirectory
+                                    (buffer-file-name))))))
                       :html-container "div"
                       :html-doctype "xhtml-strict"
                       :auto-sitemap t
                       :sitemap-filename sitemap-filename
-                      ;; TODO: make up point to site map
                       :sitemap-title "Site Map")))
 
+              ;; TODO: add top-of-body embeds, or whatever is required to insert
+              ;; that github link everyone else has
               ;; TODO: allow for setup files n stuff
-              ;; TODO: make better highlight css
+              ;; TODO: make better highlight css that actually works with the
+              ;; theme we've got going
 
               (org-publish-current-file t)  ; goes to output-file
-              (let ((sitemap-in
-                     (expand-file-name (concat input-dir "/" sitemap-filename)))
-                    (sitemap-out
-                     (expand-file-name
-                      (concat
-                       (file-name-sans-extension
-                        (concat output-dir "/" sitemap-filename))
-                       ".html"))))
-                (when (or (not (file-exists-p sitemap-out))
-                          (file-newer-than-file-p file sitemap-out))
-                  (print-stdout "generated => %s"
-                                (file-relative-name sitemap-in build-dir))
-                  (org-publish-org-sitemap (car org-publish-project-alist))
-                  (let ((sitemap-tilde (concat sitemap-in "~")))
-                    (when (file-exists-p sitemap-tilde)
-                      (delete-file sitemap-tilde)))
-                  (print-stdout "%s => %s"
-                                (file-relative-name sitemap-in build-dir)
-                                (file-relative-name sitemap-out build-dir))
-                  (org-publish-file sitemap-in)))
+              (when (or (not (file-exists-p sitemap-out))
+                        (file-newer-than-file-p file sitemap-out))
+                (print-stdout "generated => %s"
+                              (file-relative-name sitemap-in build-dir))
+                (org-publish-org-sitemap (car org-publish-project-alist))
+                (let ((sitemap-tilde (concat sitemap-in "~")))
+                  (when (file-exists-p sitemap-tilde)
+                    (delete-file sitemap-tilde)))
+                (print-stdout "%s => %s"
+                              (file-relative-name sitemap-in build-dir)
+                              (file-relative-name sitemap-out build-dir))
+                (org-publish-file sitemap-in))
               (kill-buffer
                (with-current-buffer (find-file output-file)
                  (format-links-in-region "y" (point-min) (point-max)
