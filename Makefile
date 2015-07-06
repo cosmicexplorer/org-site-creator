@@ -117,9 +117,10 @@ $(ORG_INFO_OUT): $(ORG_INFO_PROOF) $(ORG_INFO_OUT_DIR)
 
 # make html from org
 MIGRATE_SCRIPT := $(SETUP_DIR)/migrate-org.el
+DO_EXPORT_EMAIL := f
 $(OUT_PAGES): $(ORG_IN) $(DEPS)
-	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(ORG_DIR) $(OUT_DIR) $(ORG_IN) \
-		1>&2 2>/dev/null
+	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(ORG_DIR) $(OUT_DIR) \
+		$(DO_EXPORT_EMAIL) $(ORG_IN) 1>&2 2>/dev/null
 
 # htmlize
 HTMLIZE_TMP_FILE := $(SETUP_DIR)/tmpfile
@@ -129,7 +130,7 @@ HTMLIZE_OUT_FILE := $(SETUP_DIR)/output-file
 $(HTMLIZE_OUT): $(HTMLIZE_IN)
 	@for el in $(HTMLIZE_OUT_FILE) $(CURRENT_DIR)/$(HTMLIZE_FILE) \
 		$(ORG_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
-		do echo "$$el"; done > $(HTMLIZE_TMP_FILE)
+		do echo $$el; done > $(HTMLIZE_TMP_FILE)
 	@$(HTMLIZE_SCRIPT) 2>/dev/null
 	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
 
@@ -144,6 +145,7 @@ $(HTML_PARSER):
 
 sweep:
 	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
+	@rm -rf $(HTMLIZE_TMP_FILE) $(HTMLIZE_OUT_FILE)
 
 clean: $(DEPS) sweep
 	@$(MAKE) -C $(ORG_INFO_DIR) clean

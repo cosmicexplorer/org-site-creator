@@ -4,63 +4,51 @@
 
 # $1: 'y' to add '.html' toall anchors, 'n' otherwise
 
-# $2->: input files, edited in place. if '-' is given
-# it will read from stdin and output to stdout
+# $2->: input filename. used to avoid putting .html in links to the file's self
 
 use strict;
 use warnings;
 use HTML::TokeParser::Simple;
+use File::Basename;
+use File::Spec;
 
-my ($do_add_html, @file_list) = @ARGV;
-if (not defined $do_add_html) {
-  $do_add_html = "no";
+my ($do_add_html, $file_name) = @ARGV;
+my $file_name_exists = (scalar @ARGV eq 2);
+if ($file_name_exists) {
+  $file_name = basename($file_name);
 }
-@file_list = map { if ($_ eq '-') { *STDIN; } else { $_; }} @file_list;
 
 sub remove_file_links {
   my ($link, $add_html) = @_;
-  my $bare_link = $link =~ s/^file://r;
-  if ($add_html =~ /^[yY]/ and not $link =~ /^#/) {
-    $bare_link . ".html";
-  } else {
-    $bare_link;
+  my $bare_link = $link;
+  if ($link =~ /^file:/) {
+    $bare_link = $link =~ s/^file://r;
   }
+  # if this is a link to the file itself, don't append .html
+  if ($add_html =~ /^[yY]/ and $bare_link !~ /^#/ and $bare_link !~ /\.html$/
+      and ((not $file_name_exists) or ($bare_link ne $file_name))){
+    return $bare_link . ".html";
+  }
+  return $bare_link;
 }
 
-for my $file (@file_list) {
-  my ($outfile, $parser);
-  if ($file ne *STDIN) {
-    open my $fh, "<", $file or die "could not open $file: $!";
-    my $file_contents = "";
-    while (<$fh>) {
-      $file_contents = $file_contents . $_;
-    }
-    close $fh;
-    open $outfile, ">", $file or die "could not open $file: $!";
-    $parser = HTML::TokeParser::Simple->new(string => $file_contents);
-  } else {
-    $outfile = *STDOUT;
-    $parser = HTML::TokeParser::Simple->new(*STDIN);
-  }
+my $parser = HTML::TokeParser::Simple->new(*STDIN);
 
-  while ( my $token = $parser->get_token ) {
-    if ($token->is_start_tag('a')) {
-      print $outfile "<a";
-      my $attrs = $token->get_attr();
-      while (my ($k, $v) = each %{$attrs}) {
-        print $outfile " $k=\"";
-        if ($k eq 'href') {
-          print $outfile remove_file_links($v, $do_add_html);
-        } else {
-          print $outfile "$v";
-        }
-        print $outfile "\"";
+while ( my $token = $parser->get_token ) {
+  if ($token->is_start_tag('a')) {
+    print "<a";
+    my $attrs = $token->get_attr();
+    while (my ($k, $v) = each %{$attrs}) {
+      print " $k=\"";
+      if ($k eq 'href') {
+        print remove_file_links($v, $do_add_html);
+      } else {
+        print "$v";
       }
-      print $outfile ">";
-    } else {
-      print $outfile $token->as_is;
+      print "\"";
     }
+    print ">";
+  } else {
+    print $token->as_is;
   }
-
-  close $outfile;
 }

@@ -42,9 +42,12 @@
                               my-org-timestamp-format
                               (if file (nth 5 (file-attributes file))
                                 (current-time)))))
-                    (?E . ,(obscure-email-format-string
-                            (plist-get info :email)
-                            "format_eval"))
+                    (?E . ,(let ((email-str (plist-get info :email)))
+                             (cond ((eq do-export-email 'y) email-str)
+                                   ((eq do-export-email 'f)
+                                    (obscure-email-format-string
+                                     email-str "format_eval"))
+                                   (t ""))))
                     (?f . ,(let ((file (plist-get info :input-file)))
                              (file-name-sans-extension
                               (file-name-nondirectory file))))
@@ -56,6 +59,7 @@
       (list
        (list
         "en"
+        ;; couldn't figure out how to do this with divs. sue me.
         (concat
          "<table><tr>"
          "<td class=\"author\">%a</td>"
@@ -67,6 +71,14 @@
          "<td></td>"
          "<td class=\"creator\">%V, %o</td>"
          "</tr></table>"))))
+
+(defvar html-head-format-string
+  (concat "<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n"
+          "<script type=\"text/javascript\" src=\"%s\"></script>"))
+
+(defvar infojs-opts-format-string
+  (concat "path:%s toc:t ltoc:above view:info mouse:underline buttons:t "
+          "up:%s home:%s"))
 
 (defun publish-org-file-no-cache (file)
   (if (string-match-p "\\(.*/\\)?\\.?#" file) nil
@@ -90,7 +102,8 @@
                   ".html")))
                (out-tilde-file (concat output-file "~")))
           (if (or (file-newer-than-file-p file output-file)
-                  (file-newer-than-file-p load-file-name file))
+                  (file-newer-than-file-p load-file-name file)
+                  (file-newer-than-file-p transform-file-links-binary file))
               (progn
                 (setq org-publish-project-alist
                       (list
@@ -101,17 +114,32 @@
                         ;; only read org files
                         :base-extension "org"
                         :recursive t
+                        :auto-sitemap t
                         ;; publish html to given directory
                         :publishing-directory
                         (file-name-directory output-file)
-                        :publishing-function #'org-html-publish-to-html)))
-                (org-publish-current-file t)
-                (format-links-in-file "y" output-file)
+                        :publishing-function #'org-html-publish-to-html
+                        :html-preamble t
+                        :html-postamble t
+                        :html-head (format html-head-format-string
+                                           "org-info-js/stylesheet-mini.css"
+                                           "scripts/out.js")
+                        :infojs-opt
+                        (format infojs-opts-format-string
+                                "org-info-js/org-info-mini.js"
+                                (file-name-nondirectory output-file)
+                                (file-name-nondirectory output-file))
+                        :html-container "div"
+                        :html-doctype "xhtml-strict")))
+                (org-publish-current-file t)  ; goes to output-file
+                (kill-buffer
+                 (with-current-buffer (find-file output-file)
+                   (format-links-in-region "y" (point-min) (point-max)
+                                           output-file)
+                   (save-buffer)
+                   (current-buffer)))
                 (print-stdout "%s => %s" (file-relative-name file input-dir)
                               (file-relative-name output-file input-dir)))
-            (print-stdout "%s => %s (already exists)"
-                          (file-relative-name file input-dir)
-                          (file-relative-name output-file input-dir))
             (call-process "touch" nil nil nil output-file))
           (when (file-exists-p out-tilde-file) (delete-file out-tilde-file))))
       (kill-buffer file-buf))))
@@ -119,7 +147,8 @@
 (let ((htmlize-link (car argv))
       (input-dir (expand-file-name (car (cdr argv))))
       (output-dir (expand-file-name (car (cddr argv))))
-      (file-list (mapcar #'expand-file-name (nthcdr 3 argv))))
+      (do-export-email (intern (car (nthcdr 3 argv))))
+      (file-list (mapcar #'expand-file-name (nthcdr 4 argv))))
   (load-file-link htmlize-link)
   (require 'htmlize)
   (mapcar #'publish-org-file-no-cache file-list))
