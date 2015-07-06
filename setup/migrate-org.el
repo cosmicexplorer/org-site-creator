@@ -207,8 +207,7 @@
                   (print-stdout "%s => %s"
                                 (file-relative-name sitemap-in build-dir)
                                 (file-relative-name sitemap-out build-dir))
-                  (org-publish-file sitemap-in)
-                  (delete-file sitemap-in)))
+                  (org-publish-file sitemap-in)))
               (kill-buffer
                (with-current-buffer (find-file output-file)
                  (format-links-in-region "y" (point-min) (point-max)

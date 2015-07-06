@@ -12,6 +12,7 @@ ABSOLUTIFY_CMD := readlink -f
 CFG := site.config
 SETUP_DIR := $(CURRENT_DIR)/setup
 QUERY_CFG_CMD := $(SETUP_DIR)/parse_config.sh site.config
+EXCEPT := $(SETUP_DIR)/except.sh
 
 # npm
 NODE_DIR := node_modules
@@ -78,7 +79,8 @@ SPECIAL_FILE_PATTERN := -name ".git*"
 PROJ_FILE_PATTERN := -type f -not $(EXCL_FILE_PATTERN) \
 	-not $(SPECIAL_FILE_PATTERN) \
 	$(patsubst %,-not -iwholename "*%/*", $(GIT_DIR) $(NODE_DIR) \
-		$(ORG_INFO_DIR) $(HTMLIZE_DIR))
+		$(ORG_INFO_DIR) $(HTMLIZE_DIR) $(CURRENT_DIR) \
+		$(OUT_SCRIPTS_DIR) $(OUT_STYLES_DIR) $(ORG_INFO_OUT_DIR))
 
 HTMLIZE_PATTERN := $(PROJ_FILE_PATTERN) -not -name "*.html"
 HTMLIZE_IN := $(shell find $(IN_DIR) $(HTMLIZE_PATTERN))
@@ -89,7 +91,6 @@ HTMLIZE_OUT := $(patsubst %,%.html, \
 COPY_EXCL_FILE := \( -name "Makefile" -or -name ".git*" \)
 COPY_PATTERN := $(PROJ_FILE_PATTERN) -not -name "*.html" -not $(COPY_EXCL_FILE)
 COPY_IN := $(shell find $(IN_DIR) $(COPY_PATTERN))
-EXCEPT := $(SETUP_DIR)/except.sh
 COPY_OUT := $(shell $(SWITCH_DIR_SCRIPT) $(IN_DIR) $(OUT_DIR) $(COPY_IN) | \
 	$(EXCEPT) $(COPY_IN))
 
@@ -101,8 +102,6 @@ OUT_DIRS := $(OUT_SCRIPTS_DIR) $(OUT_STYLES_DIR) $(ORG_INFO_OUT_DIR)
 
 all: $(OUT_PAGES) $(OUT_SCRIPTS) $(OUT_STYLES) $(HTMLIZE_OUT) \
 	$(HTMLIZE_MAKEFILE) $(COPY_OUT) $(ORG_INFO_OUT) | $(OUT_DIRS)
-	@echo $(OUT_PAGES)
-	@echo $(HTMLIZE_OUT)
 
 $(OUT_DIRS):
 	mkdir -p $(shell $(RELIFY_CMD) $@)
@@ -175,14 +174,15 @@ $(HTML_PARSER):
 	@cpan HTML::TokeParser::Simple
 
 sweep:
-	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
+	@find $(OUT_DIR) $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
+	@find $(IN_DIR) $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
 	@rm -f $(HTMLIZE_TMP_FILE) $(HTMLIZE_OUT_FILE)
 
 clean: sweep
 	@rm -f $(HTMLIZE_OUT) $(OUT_PAGES) $(COPY_OUT)
 	@rm -rf $(ORG_INFO_OUT_DIR) $(OUT_STYLES_DIR) $(OUT_SCRIPTS_DIR)
 	@$(MAKE) -C $(ORG_INFO_DIR) clean
-	@rm -f $(HTMLIZE_TMP_FILE)
+	@rm -f $(HTMLIZE_TMP_FILE) $(INPUT_DIR)/sitemap.org
 	@rm -f $(BROWSERIFY_BUNDLE)
 
 distclean: clean

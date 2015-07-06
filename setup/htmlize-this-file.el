@@ -95,8 +95,7 @@
                       (file-relative-name
                        outfile-nonhtml (expand-file-name
                                         (concat this-dir "/..")))))
-             (make-nonhtml-file-fun))))
-    (call-process "touch" nil nil nil outfile outfile-nonhtml)))
+             (make-nonhtml-file-fun))))))
 
 (defadvice org-publish-get-project-from-filename (around ew activate)
   (setq ad-return-value (car org-publish-project-alist)))
@@ -113,5 +112,8 @@
         (input-files (nthcdr 4 argv)))
     (load-file-link htmlize-link)
     (require 'htmlize)
+    ;; disgusting, disgusting hack
+    (let ((sitemap-file (expand-file-name (concat input-dir "/" "sitemap.org"))))
+      (htmlize-this-file sitemap-file))
     (mapcar #'htmlize-this-file input-files))
   (kill-emacs 0))
