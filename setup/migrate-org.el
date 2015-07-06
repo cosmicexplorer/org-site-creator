@@ -153,6 +153,17 @@
                 (file-newer-than-file-p transform-file-links-binary file))
             (progn
 
+              (goto-char (point-min))
+              (while (re-search-forward "^#\\+SETUPFILE: \\(.+\\)" nil t)
+                (let ((insert-str (match-string 1)))
+                  (beginning-of-line)
+                  (delete-region (point) (line-end-position))
+                  (insert
+                   (let* ((buf (find-file insert-str))
+                          (str (with-current-buffer buf (buffer-string))))
+                     (kill-buffer buf)
+                     str))))
+
               (setq org-publish-project-alist
                     (list
                      (list
@@ -171,27 +182,41 @@
                       :tex t
                       :html-scripts t
                       :html-style t
-                      :html-head (format (html-head-format-string)
-                                         (if (hl-css)
-                                             (file-relative-name
-                                              (hljs-css)
-                                              (file-name-directory output-file))
-                                           "")
-                                         (if (do-org-info-string)
-                                             (file-relative-name
-                                              (org-info-js-css)
-                                              (file-name-directory output-file))
-                                           "")
-                                         (file-relative-name
-                                          (expand-file-name
-                                           (concat
-                                            output-dir "/scripts/out.js"))
-                                          (file-name-directory output-file))
-                                         ;; add and initialize highlightjs
-                                         (file-relative-name
-                                          (bundle-js)
-                                          (file-name-directory output-file))
-                                         highlightjs-init)
+                      :html-head
+                      (let* ((htmlhead-regexp "^#\\+HTML_HEAD:\\( .*\\)")
+                             (htmlhead-additions
+                              (mapconcat
+                               #'identity (re-seq htmlhead-regexp
+                                                  (buffer-string) 1) " ")))
+                        (message ">>%s<<" htmlhead-additions)
+                        (goto-char (point-min))
+                        (while (re-search-forward htmlhead-regexp nil t)
+                          (beginning-of-line)
+                          (delete-region (line-beginning-position)
+                                         (line-end-position)))
+                        (message "<<%s>>" (buffer-string))
+                        (concat htmlhead-additions " "
+                                (format (html-head-format-string)
+                                        (if (hl-css)
+                                            (file-relative-name
+                                             (hljs-css)
+                                             (file-name-directory output-file))
+                                          "")
+                                        (if (do-org-info-string)
+                                            (file-relative-name
+                                             (org-info-js-css)
+                                             (file-name-directory output-file))
+                                          "")
+                                        (file-relative-name
+                                         (expand-file-name
+                                          (concat
+                                           output-dir "/scripts/out.js"))
+                                         (file-name-directory output-file))
+                                        ;; add and initialize highlightjs
+                                        (file-relative-name
+                                         (bundle-js)
+                                         (file-name-directory output-file))
+                                        highlightjs-init)))
                       :infojs-opt
                       (let ((indexfile (expand-file-name
                                         (concat input-dir "/"
@@ -228,9 +253,6 @@
                       :sitemap-filename sitemap-filename
                       :sitemap-title "Site Map")))
 
-              ;; TODO: add top-of-body embeds, or whatever is required to insert
-              ;; that github link everyone else has
-              ;; TODO: allow for setup files n stuff
               ;; TODO: make better highlight css that actually works with the
               ;; theme we've got going
 
@@ -246,7 +268,7 @@
                 (print-stdout "%s => %s"
                               (file-relative-name sitemap-in build-dir)
                               (file-relative-name sitemap-out build-dir))
-                (org-publish-file sitemap-in))
+                (org-publish-file sitemap-in (car org-publish-project-alist) t))
               (kill-buffer
                (with-current-buffer (find-file output-file)
                  (format-links-in-region "y" (point-min) (point-max)
