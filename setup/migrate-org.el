@@ -10,7 +10,7 @@
 ;;; we don't want org to use its cache here since we're using make, but these
 ;;; functions are buggy and throw errors anyway, even when we tell org not to
 ;;; use its cache
- (defadvice org-publish-needed-p (around publish-always-needed activate)
+(defadvice org-publish-needed-p (around publish-always-needed activate)
   (setq ad-return-value t))
 (defadvice org-publish-cache-set (around no-publish-cache-set activate)
   (setq ad-return-value nil))
@@ -111,7 +111,7 @@
   (expand-file-name (concat output-dir "/scripts/bundle.js")))
 
 (defun hljs-css ()
-  (expand-file-name (concat output-dir "/styles/tomorrow-night-bright.css")))
+  (expand-file-name (concat output-dir "/styles/tomorrow.css")))
 
 (defvar sitemap-filename "sitemap.org")
 
@@ -126,6 +126,99 @@
         (setq pos (match-end num)))
       matches)))
 
+(defun setup-org-proj-alist (&optional buf-file-name)
+  (setq org-publish-project-alist
+        (list
+         (list
+          "org"
+          ;; read org source from "org/" subdirectory
+          :base-directory input-dir
+          ;; only read org files
+          :base-extension "org"
+          :recursive t
+          ;; publish html to given directory
+          :publishing-directory output-dir
+          :publishing-function #'org-html-publish-to-html
+          :html-preamble t
+          :html-postamble t
+          :html-html5-fancy t
+          :tex t
+          :html-scripts t
+          :html-style t
+          :html-head
+          (let* ((htmlhead-regexp "^#\\+HTML_HEAD:\\( .*\\)")
+                 (htmlhead-additions
+                  (mapconcat
+                   #'identity (re-seq htmlhead-regexp
+                                      (buffer-string) 1) " ")))
+            (goto-char (point-min))
+            (while (re-search-forward htmlhead-regexp nil t)
+              (beginning-of-line)
+              (delete-region (line-beginning-position)
+                             (line-end-position)))
+            (concat htmlhead-additions " "
+                    (format (html-head-format-string)
+                            (if (hl-css)
+                                (file-relative-name
+                                 (hljs-css)
+                                 (file-name-directory output-file))
+                              "")
+                            (if (do-org-info-string)
+                                (file-relative-name
+                                 (org-info-js-css)
+                                 (file-name-directory output-file))
+                              "")
+                            (file-relative-name
+                             (expand-file-name
+                              (concat
+                               output-dir "/scripts/out.js"))
+                             (file-name-directory output-file))
+                            ;; add and initialize highlightjs
+                            (file-relative-name
+                             (bundle-js)
+                             (file-name-directory output-file))
+                            highlightjs-init)))
+          :infojs-opt
+          (let ((indexfile (expand-file-name
+                            (concat input-dir "/"
+                                    "index.org")))
+                (index-htmlfile
+                 (expand-file-name (concat output-dir "/"
+                                           "index.html")))
+                (infojs-opt-additions
+                 (mapconcat
+                  #'identity
+                  (re-seq "^#\\+INFOJS_OPTS:\\( .*\\)"
+                          (buffer-string) 1) " ")))
+            (concat
+             ;; add #+INFOJS_OPTS: to preempt given options
+             infojs-opt-additions " "
+             (format infojs-opts-format-string
+                     (file-relative-name
+                      (org-info-js-js)
+                      (file-name-directory output-file))
+                     (if (file-exists-p indexfile)
+                         (file-relative-name
+                          index-htmlfile
+                          (file-name-directory output-file))
+                       (file-name-nondirectory (or (buffer-file-name)
+                                                   buf-file-name)))
+                     (let ((sitemap-out
+                            (concat (file-name-sans-extension sitemap-filename)
+                                    ".html")))
+                       (if (file-exists-p sitemap-filename)
+                           (file-relative-name
+                            sitemap-out (file-name-directory output-file))
+                         (file-name-nondirectory
+                          (or
+                           (buffer-file-name)
+                           buf-file-name)))))))
+          :html-container "div"
+          :html-doctype "xhtml-strict"
+          :auto-sitemap t
+          :sitemap-filename sitemap-filename
+          :sitemap-title "Site Map"))))
+
 (defun publish-org-file-no-cache (file)
   (let ((file-buf (find-file (expand-file-name file))))
     (with-current-buffer file-buf
@@ -139,15 +232,7 @@
                    (regexp-quote input-dir)
                    "" file)))
                 ".html")))
-             (out-tilde-file (concat output-file "~"))
-             (sitemap-in
-              (expand-file-name (concat input-dir "/" sitemap-filename)))
-             (sitemap-out
-              (expand-file-name
-               (concat
-                (file-name-sans-extension
-                 (concat output-dir "/" sitemap-filename))
-                ".html"))))
+             (out-tilde-file (concat output-file "~")))
         (if (or (file-newer-than-file-p file output-file)
                 (file-newer-than-file-p load-file-name file)
                 (file-newer-than-file-p transform-file-links-binary file))
@@ -164,111 +249,12 @@
                      (kill-buffer buf)
                      str))))
 
-              (setq org-publish-project-alist
-                    (list
-                     (list
-                      "org"
-                      ;; read org source from "org/" subdirectory
-                      :base-directory input-dir
-                      ;; only read org files
-                      :base-extension "org"
-                      :recursive t
-                      ;; publish html to given directory
-                      :publishing-directory output-dir
-                      :publishing-function #'org-html-publish-to-html
-                      :html-preamble t
-                      :html-postamble t
-                      :html-html5-fancy t
-                      :tex t
-                      :html-scripts t
-                      :html-style t
-                      :html-head
-                      (let* ((htmlhead-regexp "^#\\+HTML_HEAD:\\( .*\\)")
-                             (htmlhead-additions
-                              (mapconcat
-                               #'identity (re-seq htmlhead-regexp
-                                                  (buffer-string) 1) " ")))
-                        (message ">>%s<<" htmlhead-additions)
-                        (goto-char (point-min))
-                        (while (re-search-forward htmlhead-regexp nil t)
-                          (beginning-of-line)
-                          (delete-region (line-beginning-position)
-                                         (line-end-position)))
-                        (message "<<%s>>" (buffer-string))
-                        (concat htmlhead-additions " "
-                                (format (html-head-format-string)
-                                        (if (hl-css)
-                                            (file-relative-name
-                                             (hljs-css)
-                                             (file-name-directory output-file))
-                                          "")
-                                        (if (do-org-info-string)
-                                            (file-relative-name
-                                             (org-info-js-css)
-                                             (file-name-directory output-file))
-                                          "")
-                                        (file-relative-name
-                                         (expand-file-name
-                                          (concat
-                                           output-dir "/scripts/out.js"))
-                                         (file-name-directory output-file))
-                                        ;; add and initialize highlightjs
-                                        (file-relative-name
-                                         (bundle-js)
-                                         (file-name-directory output-file))
-                                        highlightjs-init)))
-                      :infojs-opt
-                      (let ((indexfile (expand-file-name
-                                        (concat input-dir "/"
-                                                "index.org")))
-                            (index-htmlfile
-                             (expand-file-name (concat output-dir "/"
-                                                       "index.html")))
-                            (infojs-opt-additions
-                             (mapconcat
-                              #'identity
-                              (re-seq "^#\\+INFOJS_OPTS:\\( .*\\)"
-                                      (buffer-string) 1) " ")))
-                        (concat
-                         ;; add #+INFOJS_OPTS: to preempt given options
-                         infojs-opt-additions " "
-                         (format infojs-opts-format-string
-                                 (file-relative-name
-                                  (org-info-js-js)
-                                  (file-name-directory output-file))
-                                 (if (file-exists-p indexfile)
-                                     (file-relative-name
-                                      index-htmlfile
-                                      (file-name-directory output-file))
-                                   (file-name-nondirectory (buffer-file-name)))
-                                 (if (file-exists-p indexfile)
-                                     (file-relative-name
-                                      index-htmlfile
-                                      (file-name-directory output-file))
-                                   (file-name-nondirectory
-                                    (buffer-file-name))))))
-                      :html-container "div"
-                      :html-doctype "xhtml-strict"
-                      :auto-sitemap t
-                      :sitemap-filename sitemap-filename
-                      :sitemap-title "Site Map")))
+              (setup-org-proj-alist)
 
               ;; TODO: make better highlight css that actually works with the
               ;; theme we've got going
 
               (org-publish-current-file t)  ; goes to output-file
-              (when (or (not (file-exists-p sitemap-out))
-                        (file-newer-than-file-p file sitemap-out))
-                (print-stdout "generated => %s"
-                              (file-relative-name sitemap-in build-dir))
-                (org-publish-org-sitemap (car org-publish-project-alist))
-                (let ((sitemap-tilde (concat sitemap-in "~")))
-                  (when (file-exists-p sitemap-tilde)
-                    (delete-file sitemap-tilde)))
-                (print-stdout "%s => %s"
-                              (file-relative-name sitemap-in build-dir)
-                              (file-relative-name sitemap-out build-dir))
-                (org-publish-file sitemap-in (car org-publish-project-alist) t))
               (kill-buffer
                (with-current-buffer (find-file output-file)
                  (format-links-in-region "y" (point-min) (point-max)
@@ -282,6 +268,9 @@
         (when (file-exists-p out-tilde-file) (delete-file out-tilde-file))))
     (kill-buffer file-buf)))
 
+(defun or-fun (a b)
+  (or a b))
+
 (let ((htmlize-link (car argv))
       (input-dir (expand-file-name (car (cdr argv))))
       (output-dir (expand-file-name (car (cddr argv))))
@@ -291,5 +280,33 @@
       (file-list (mapcar #'expand-file-name (nthcdr 6 argv))))
   (load-file-link htmlize-link)
   (require 'htmlize)
-  (mapcar #'publish-org-file-no-cache file-list))
+  (let ((sitemap-in
+         (expand-file-name (concat input-dir "/" sitemap-filename)))
+        (sitemap-out
+         (expand-file-name
+          (concat
+           (file-name-sans-extension
+            (concat output-dir "/" sitemap-filename))
+           ".html"))))
+    (mapcar #'publish-org-file-no-cache file-list)
+    (print-stdout "generated => %s"
+                  (file-relative-name sitemap-in build-dir))
+    (let* ((output-file
+            (expand-file-name
+             (concat
+              (file-name-sans-extension
+               (concat
+                output-dir "/"
+                (replace-regexp-in-string
+                 (regexp-quote input-dir)
+                 "" file)))
+              ".html")))
+           (out-tilde-file (concat output-file "~"))
+           (file sitemap-in))
+      (setup-org-proj-alist sitemap-in)
+      (org-publish-org-sitemap (car org-publish-project-alist)))
+    (let ((sitemap-tilde (concat sitemap-in "~")))
+      (when (file-exists-p sitemap-tilde)
+        (delete-file sitemap-tilde)))
+    (publish-org-file-no-cache sitemap-in)))
 (kill-emacs 0)
