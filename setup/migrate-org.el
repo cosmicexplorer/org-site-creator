@@ -45,7 +45,10 @@
                               (if file (nth 5 (file-attributes file))
                                 (current-time)))))
                     (?E . ,(let ((email-str (plist-get info :email)))
-                             (cond ((eq do-export-email 'y) email-str)
+                             (cond ((eq do-export-email 'y)
+                                    (concat
+                                     "<a href=\"mailto:" email-str "\">"
+                                     email-str "</a>"))
                                    ((eq do-export-email 'f)
                                     (obscure-email-format-string
                                      email-str "format_eval"))
@@ -78,12 +81,16 @@
 
 (defun hl-css () (eq do-highlight-css 'y))
 
+(defun do-org-info-string () (eq do-org-info 'y))
+
 (defun html-head-format-string ()
   (concat
    (if (hl-css)
        "<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n"
      "%s")
-   "<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n"
+   (if (do-org-info-string)
+       "<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n"
+     "%s")
    "<script type=\"text/javascript\" src=\"%s\"></script>\n"
    "<script type=\"text/javascript\" src=\"%s\"></script>\n"
    "<script type=\"text/javascript\">%s</script>\n"))
@@ -126,6 +133,7 @@
                 (file-newer-than-file-p load-file-name file)
                 (file-newer-than-file-p transform-file-links-binary file))
             (progn
+
               (setq org-publish-project-alist
                     (list
                      (list
@@ -150,9 +158,11 @@
                                               (hljs-css)
                                               (file-name-directory output-file))
                                            "")
-                                         (file-relative-name
-                                          (org-info-js-css)
-                                          (file-name-directory output-file))
+                                         (if (do-org-info-string)
+                                             (file-relative-name
+                                              (org-info-js-css)
+                                              (file-name-directory output-file))
+                                           "")
                                          (file-relative-name
                                           (expand-file-name
                                            (concat
@@ -176,6 +186,7 @@
                       :sitemap-filename sitemap-filename
                       ;; TODO: make up point to site map
                       :sitemap-title "Site Map")))
+
               (org-publish-current-file t)  ; goes to output-file
               (let ((sitemap-in
                      (expand-file-name (concat input-dir "/" sitemap-filename)))
@@ -216,7 +227,8 @@
       (output-dir (expand-file-name (car (cddr argv))))
       (do-export-email (intern (car (nthcdr 3 argv))))
       (do-highlight-css (intern (car (nthcdr 4 argv))))
-      (file-list (mapcar #'expand-file-name (nthcdr 5 argv))))
+      (do-org-info (intern (car (nthcdr 5 argv))))
+      (file-list (mapcar #'expand-file-name (nthcdr 6 argv))))
   (load-file-link htmlize-link)
   (require 'htmlize)
   (mapcar #'publish-org-file-no-cache file-list))

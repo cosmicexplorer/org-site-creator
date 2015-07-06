@@ -11,10 +11,10 @@
 
 WORKING_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-tmpfile="$2"
+tmpfile="$1"
 output_file="$WORKING_DIR/output-file"
 
-display_num="$1"
+display_num="$2"
 nw_arg=""
 if [ "$display_num" = 'nw' ]; then
   nw_arg="-nw"

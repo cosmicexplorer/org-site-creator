@@ -131,18 +131,20 @@ $(ORG_INFO_OUT): $(ORG_INFO_PROOF) $(ORG_INFO_OUT_DIR)
 
 # make html from org
 MIGRATE_SCRIPT := $(SETUP_DIR)/migrate-org.el
-DO_EXPORT_EMAIL := $(shell $(QUERY_CFG_CMD) export_email)
-DO_HL_CSS := $(shell $(QUERY_CFG_CMD) highlight_css)
+DO_EXPORT_EMAIL := $(shell $(QUERY_CFG_CMD) export_email || echo y)
+DO_HL_CSS := $(shell $(QUERY_CFG_CMD) highlight_css || echo n)
+DO_ORG_INFO := $(shell $(QUERY_CFG_CMD) org_info || echo y)
 $(OUT_PAGES): $(ORG_IN) $(DEPS)
 	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(IN_DIR) $(OUT_DIR) \
-		$(DO_EXPORT_EMAIL) $(DO_HL_CSS) $(ORG_IN) 1>&2 2>/dev/null
+		$(DO_EXPORT_EMAIL) $(DO_HL_CSS) $(DO_ORG_INFO) $(ORG_IN) \
+		1>&2 2>/dev/null
 
 # htmlize
 HTMLIZE_TMP_FILE := $(SETUP_DIR)/tmpfile
-HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize-file.sh \
-	$(shell $(QUERY_CFG_CMD) xvfb_disp) $(HTMLIZE_TMP_FILE)
+HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize-file.sh $(HTMLIZE_TMP_FILE) \
+	$(shell $(QUERY_CFG_CMD) xvfb_disp)
 HTMLIZE_OUT_FILE := $(SETUP_DIR)/output-file
-$(HTMLIZE_OUT) $(COPY_OUT): $(HTMLIZE_IN) $(COPY_IN) # $(DEPS)
+$(HTMLIZE_OUT) $(COPY_OUT): $(HTMLIZE_IN) $(COPY_IN) $(DEPS)
 	@for el in $(HTMLIZE_OUT_FILE) $(CURRENT_DIR)/$(HTMLIZE_FILE) \
 		$(IN_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
 		do echo $$el; done > $(HTMLIZE_TMP_FILE)
