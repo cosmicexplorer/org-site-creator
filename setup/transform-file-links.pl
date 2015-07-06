@@ -10,7 +10,6 @@ use strict;
 use warnings;
 use HTML::TokeParser::Simple;
 use File::Basename;
-use File::Spec;
 
 my ($do_add_html, $file_name) = @ARGV;
 my $file_name_exists = (scalar @ARGV eq 2);

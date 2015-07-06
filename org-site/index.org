@@ -8,10 +8,12 @@
 * hey
 lol hey
 
-Here's some code from [[file:setup/htmlize-this-file.el]]:
-#+BEGIN_SRC emacs-lisp
-(message "%s" "what a triumph!")
+Here's some code from [[file:test.c]]:
+#+BEGIN_SRC c
+printf("%s\n", "hello world!");
 #+END_SRC
+
+Truly amazing.
 
 ** more stuff
 a

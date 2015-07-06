@@ -15,8 +15,13 @@ tmpfile="$2"
 output_file="$WORKING_DIR/output-file"
 
 display_num="$1"
-
-if hash 2>/dev/null; then
+nw_arg=""
+if [ "$display_num" = 'nw' ]; then
+  nw_arg="-nw"
+  display_num="$DISPLAY"
+elif [ "$display_num" = "" ]; then
+  display_num="$DISPLAY"
+elif hash Xvfb 2>/dev/null; then
   Xvfb "$display_num" -screen 1 800x600x24 &
   xvfb_pid="$!"
 fi
@@ -38,4 +43,5 @@ function finish {
 trap finish EXIT
 
 # should work if in non-graphical environment too
-TERM="xterm" DISPLAY="$display_num" emacs -l "$WORKING_DIR/htmlize-this-file.el"
+emacs_args="$nw_arg -l $WORKING_DIR/htmlize-this-file.el"
+TERM="xterm" DISPLAY="$display_num" emacs $emacs_args

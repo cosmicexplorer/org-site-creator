@@ -1,11 +1,17 @@
 .PHONY: all clean sweep distclean rebuild serve
 .DELETE_ON_ERROR:
 
+# utilities
 THIS_MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 CURRENT_DIR := $(patsubst %/,%,$(dir $(THIS_MAKEFILE_PATH)))
-
 # turn paths relative
 RELIFY_CMD := perl -e 'use File::Spec; print File::Spec->abs2rel(@ARGV) . "\n"'
+ABSOLUTIFY_CMD := readlink -f
+
+# config file
+CFG := site.config
+SETUP_DIR := $(CURRENT_DIR)/setup
+QUERY_CFG_CMD := $(SETUP_DIR)/parse_config.sh site.config
 
 # npm
 NODE_DIR := node_modules
@@ -34,22 +40,21 @@ SUBMODULES := $(HTMLIZE_DIR) $(ORG_INFO_DIR)
 SUBMODULE_PROOFS := $(HTMLIZE_PROOF) $(ORG_INFO_PROOF)
 
 # build scripts
-SETUP_DIR := $(CURRENT_DIR)/setup
 DEPS := $(SUBMODULE_PROOFS) $(NODE_DEPS) $(PERL_DEPS) \
-	$(wildcard $(SETUP_DIR)/*) $(THIS_MAKEFILE_PATH)
+	$(wildcard $(SETUP_DIR)/*) $(THIS_MAKEFILE_PATH) $(CFG)
 
 # we read from this to setup everything else
 JEKYLL_CONFIG := _config.yml
 
 SWITCH_DIR_SCRIPT := $(SETUP_DIR)/switch-dir.sh
 
-OUT_DIR := $(CURRENT_DIR)/cosmicexplorer.github.io
+OUT_DIR := $(shell $(ABSOLUTIFY_CMD) $(shell $(QUERY_CFG_CMD) outdir))
 ORG_PATTERN := -type f -name "*.org" \
 	$(patsubst %,-not -iwholename "*%/*", $(ORG_INFO_DIR) $(OUT_DIR))
-ORG_DIR := $(CURRENT_DIR)
-ORG_IN := $(shell find $(ORG_DIR) $(ORG_PATTERN) | sort | uniq)
+IN_DIR := $(shell $(ABSOLUTIFY_CMD) $(shell $(QUERY_CFG_CMD) indir))
+ORG_IN := $(shell find $(IN_DIR) $(ORG_PATTERN) | sort | uniq)
 OUT_PAGES := $(patsubst %.org, %.html, \
-	$(shell $(SWITCH_DIR_SCRIPT) $(CURRENT_DIR) $(OUT_DIR) $(ORG_IN)))
+	$(shell $(SWITCH_DIR_SCRIPT) $(IN_DIR) $(OUT_DIR) $(ORG_IN)))
 
 SCRIPTS_DIR := scripts
 OUT_SCRIPTS_DIR := $(OUT_DIR)/$(SCRIPTS_DIR)
@@ -70,15 +75,15 @@ PROJ_FILE_PATTERN := -type f -not $(EXCL_FILE_PATTERN) \
 		$(OUT_DIR) $(ORG_INFO_DIR) $(HTMLIZE_DIR))
 
 HTMLIZE_PATTERN := $(PROJ_FILE_PATTERN) -not -name "*.html"
-HTMLIZE_IN := $(shell find $(CURRENT_DIR) $(HTMLIZE_PATTERN))
+HTMLIZE_IN := $(shell find $(IN_DIR) $(HTMLIZE_PATTERN))
 HTMLIZE_OUT := $(patsubst %,%.html, \
-	$(shell $(SWITCH_DIR_SCRIPT) $(CURRENT_DIR) $(OUT_DIR) \
+	$(shell $(SWITCH_DIR_SCRIPT) $(IN_DIR) $(OUT_DIR) \
 		$(HTMLIZE_IN)))
 
 COPY_EXCL_FILE := \( -name "Makefile" -or -name ".git*" \)
 COPY_PATTERN := $(PROJ_FILE_PATTERN) -not -name "*.html" -not $(COPY_EXCL_FILE)
-COPY_IN := $(shell find $(CURRENT_DIR) $(COPY_PATTERN))
-COPY_OUT := $(shell $(SWITCH_DIR_SCRIPT) $(CURRENT_DIR) $(OUT_DIR) $(COPY_IN))
+COPY_IN := $(shell find $(IN_DIR) $(COPY_PATTERN))
+COPY_OUT := $(shell $(SWITCH_DIR_SCRIPT) $(IN_DIR) $(OUT_DIR) $(COPY_IN))
 
 ORG_INFO_OUT_DIR := $(OUT_DIR)/$(ORG_INFO_DIR)
 ORG_INFO_OUT := $(ORG_INFO_OUT_DIR)/stylesheet-mini.css \
@@ -119,17 +124,17 @@ $(ORG_INFO_OUT): $(ORG_INFO_PROOF) $(ORG_INFO_OUT_DIR)
 MIGRATE_SCRIPT := $(SETUP_DIR)/migrate-org.el
 DO_EXPORT_EMAIL := f
 $(OUT_PAGES): $(ORG_IN) $(DEPS)
-	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(ORG_DIR) $(OUT_DIR) \
-		$(DO_EXPORT_EMAIL) $(ORG_IN) 1>&2 2>/dev/null
+	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(IN_DIR) $(OUT_DIR) \
+		$(DO_EXPORT_EMAIL) $(ORG_IN) # 1>&2 2>/dev/null
 
 # htmlize
 HTMLIZE_TMP_FILE := $(SETUP_DIR)/tmpfile
 HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize-file.sh \
-	$(shell cat $(CURRENT_DIR)/.xvfb.config) $(HTMLIZE_TMP_FILE)
+	$(shell $(QUERY_CFG_CMD) xvfb_disp) $(HTMLIZE_TMP_FILE)
 HTMLIZE_OUT_FILE := $(SETUP_DIR)/output-file
-$(HTMLIZE_OUT): $(HTMLIZE_IN)
+$(HTMLIZE_OUT) $(COPY_OUT): $(HTMLIZE_IN) $(COPY_IN)
 	@for el in $(HTMLIZE_OUT_FILE) $(CURRENT_DIR)/$(HTMLIZE_FILE) \
-		$(ORG_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
+		$(IN_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
 		do echo $$el; done > $(HTMLIZE_TMP_FILE)
 	@$(HTMLIZE_SCRIPT) 2>/dev/null
 	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'

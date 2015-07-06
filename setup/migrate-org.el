@@ -3,6 +3,8 @@
 (load (concat (file-name-directory load-file-name)
               "emacs-script-common.el") nil t)
 
+(setq build-dir default-directory)
+
 (require 'ox-publish)
 
 ;;; we don't want org to use its cache here since we're using make, but these
@@ -80,69 +82,104 @@
   (concat "path:%s toc:t ltoc:above view:info mouse:underline buttons:t "
           "up:%s home:%s"))
 
+(defvar build-dir (file-name-nondirectory load-file-name))
+(defun org-info-js-dir ()
+  (expand-file-name (concat output-dir "/org-info-js/")))
+(defun org-info-js-js ()
+  (expand-file-name (concat (org-info-js-dir) "org-info-mini.js")))
+(defun org-info-js-css ()
+  (expand-file-name (concat (org-info-js-dir) "stylesheet-mini.css")))
+
+(defvar sitemap-filename "sitemap.org")
+
 (defun publish-org-file-no-cache (file)
-  (if (string-match-p "\\(.*/\\)?\\.?#" file) nil
-    (let ((file-buf (find-file (expand-file-name file))))
-      (with-current-buffer file-buf
-        (let* ((output-file
-                (expand-file-name
+  (let ((file-buf (find-file (expand-file-name file))))
+    (with-current-buffer file-buf
+      (let* ((output-file
+              (expand-file-name
+               (concat
+                (file-name-sans-extension
                  (concat
-                  (file-name-sans-extension
-                   (concat
-                    output-dir "/"
-                    (replace-regexp-in-string
-                     (regexp-quote
-                      (let ((common-root output-dir))
-                        (while
-                            (not (string-match-p (regexp-quote common-root)
-                                                 file))
-                          (setq common-root (file-name-directory common-root)))
-                        common-root))
-                     "" file)))
-                  ".html")))
-               (out-tilde-file (concat output-file "~")))
-          (if (or (file-newer-than-file-p file output-file)
-                  (file-newer-than-file-p load-file-name file)
-                  (file-newer-than-file-p transform-file-links-binary file))
-              (progn
-                (setq org-publish-project-alist
-                      (list
-                       (list
-                        "org"
-                        ;; read org source from "org/" subdirectory
-                        :base-directory (file-name-directory file)
-                        ;; only read org files
-                        :base-extension "org"
-                        :recursive t
-                        :auto-sitemap t
-                        ;; publish html to given directory
-                        :publishing-directory
-                        (file-name-directory output-file)
-                        :publishing-function #'org-html-publish-to-html
-                        :html-preamble t
-                        :html-postamble t
-                        :html-head (format html-head-format-string
-                                           "org-info-js/stylesheet-mini.css"
-                                           "scripts/out.js")
-                        :infojs-opt
-                        (format infojs-opts-format-string
-                                "org-info-js/org-info-mini.js"
-                                (file-name-nondirectory output-file)
-                                (file-name-nondirectory output-file))
-                        :html-container "div"
-                        :html-doctype "xhtml-strict")))
-                (org-publish-current-file t)  ; goes to output-file
-                (kill-buffer
-                 (with-current-buffer (find-file output-file)
-                   (format-links-in-region "y" (point-min) (point-max)
-                                           output-file)
-                   (save-buffer)
-                   (current-buffer)))
-                (print-stdout "%s => %s" (file-relative-name file input-dir)
-                              (file-relative-name output-file input-dir)))
-            (call-process "touch" nil nil nil output-file))
-          (when (file-exists-p out-tilde-file) (delete-file out-tilde-file))))
-      (kill-buffer file-buf))))
+                  output-dir "/"
+                  (replace-regexp-in-string
+                   (regexp-quote input-dir)
+                   "" file)))
+                ".html")))
+             (out-tilde-file (concat output-file "~")))
+        (if (or (file-newer-than-file-p file output-file)
+                (file-newer-than-file-p load-file-name file)
+                (file-newer-than-file-p transform-file-links-binary file))
+            (progn
+              (setq org-publish-project-alist
+                    (list
+                     (list
+                      "org"
+                      ;; read org source from "org/" subdirectory
+                      :base-directory input-dir
+                      ;; only read org files
+                      :base-extension "org"
+                      :recursive t
+                      ;; publish html to given directory
+                      :publishing-directory output-dir
+                      :publishing-function #'org-html-publish-to-html
+                      :html-preamble t
+                      :html-postamble t
+                      :html-head (format html-head-format-string
+                                         (file-relative-name
+                                          (org-info-js-css)
+                                          (file-name-directory output-file))
+                                         (file-relative-name
+                                          (expand-file-name
+                                           (concat
+                                            output-dir "/scripts/out.js"))
+                                          (file-name-directory output-file)))
+                      :infojs-opt
+                      (format infojs-opts-format-string
+                              (file-relative-name
+                               (org-info-js-js)
+                               (file-name-directory output-file))
+                              (file-name-nondirectory output-file)
+                              (file-name-nondirectory output-file))
+                      :html-container "div"
+                      :html-doctype "xhtml-strict"
+                      :auto-sitemap t
+                      :sitemap-filename sitemap-filename
+                      :sitemap-title "Site Map"
+                      :link-up sitemap-filename)))
+              (org-publish-current-file t)  ; goes to output-file
+              (let ((sitemap-in
+                     (expand-file-name (concat input-dir "/" sitemap-filename)))
+                    (sitemap-out
+                     (expand-file-name
+                      (concat
+                       (file-name-sans-extension
+                        (concat output-dir "/" sitemap-filename))
+                       ".html"))))
+                (when (or (not (file-exists-p sitemap-out))
+                          (file-newer-than-file-p file sitemap-out))
+                  (print-stdout "%s created"
+                                (file-relative-name sitemap-in build-dir))
+                  (org-publish-org-sitemap (car org-publish-project-alist))
+                  (let ((sitemap-tilde (concat sitemap-in "~")))
+                    (when (file-exists-p sitemap-tilde)
+                      (delete-file sitemap-tilde)))
+                  (print-stdout "%s => %s"
+                                (file-relative-name sitemap-in build-dir)
+                                (file-relative-name sitemap-out build-dir))
+                  (org-publish-file sitemap-in)
+                  (delete-file sitemap-in)))
+              (kill-buffer
+               (with-current-buffer (find-file output-file)
+                 (format-links-in-region "y" (point-min) (point-max)
+                                         output-file)
+                 (save-buffer)
+                 (current-buffer)))
+              (print-stdout "%s => %s"
+                            (file-relative-name file build-dir)
+                            (file-relative-name output-file build-dir)))
+          (call-process "touch" nil nil nil output-file))
+        (when (file-exists-p out-tilde-file) (delete-file out-tilde-file))))
+    (kill-buffer file-buf)))
 
 (let ((htmlize-link (car argv))
       (input-dir (expand-file-name (car (cdr argv))))
