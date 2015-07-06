@@ -113,7 +113,8 @@
     (load-file-link htmlize-link)
     (require 'htmlize)
     ;; disgusting, disgusting hack
-    (let ((sitemap-file (expand-file-name (concat input-dir "/" "sitemap.org"))))
+    (let ((sitemap-file (expand-file-name (concat input-dir "/"
+                                                  "sitemap.org"))))
       (htmlize-this-file sitemap-file))
     (mapcar #'htmlize-this-file input-files))
   (kill-emacs 0))
