@@ -2,15 +2,13 @@
 #+TITLE: index lol
 #+AUTHOR: Danny McClanahan
 #+EMAIL: (format "%s@%s.com" "danieldmcclanahan" "gmail")
-#+LINK_UP: //index.html
-#+LINK_HOME: //index.html
 
 * hey
 lol hey
 
 Here's some code from [[file:test.c]]:
-#+BEGIN_SRC c
-printf("%s\n", "hello world!");
+#+BEGIN_SRC javascript
+console.log("hello world!");
 #+END_SRC
 
 Truly amazing.

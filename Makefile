@@ -19,8 +19,16 @@ NPM_BIN = $(shell npm bin)
 COFFEE_CC = $(NPM_BIN)/coffee
 UGLIFY_JS = $(NPM_BIN)/uglifyjs
 UGLIFY_JS_OPTS := -mc --screw-ie8 2>/dev/null
+UGLIFY_CSS = $(NPM_BIN)/uglifycss
+BROWSERIFY_CC = $(NPM_BIN)/browserify
 
-NODE_DEPS = $(COFFEE_CC) $(UGLIFY_JS)
+SCRIPTS_DIR := scripts
+HIGHLIGHT_JS := highlight.js
+BROWSERIFY_CONVERSIONS := $(HIGHLIGHT_JS)
+BROWSERIFY_BUNDLE := $(SCRIPTS_DIR)/bundle.js
+
+NODE_DEPS = $(COFFEE_CC) $(UGLIFY_JS) $(UGLIFY_CSS) $(BROWSERIFY_CC) \
+	$(patsubst %,$(NODE_DIR)/%,$(BROWSERIFY_CONVERSIONS))
 
 # cpan
 HTML_PARSER = $(shell if perl -e 'use HTML::TokeParser::Simple'; then echo; \
@@ -43,9 +51,6 @@ SUBMODULE_PROOFS := $(HTMLIZE_PROOF) $(ORG_INFO_PROOF)
 DEPS := $(SUBMODULE_PROOFS) $(NODE_DEPS) $(PERL_DEPS) \
 	$(wildcard $(SETUP_DIR)/*) $(THIS_MAKEFILE_PATH) $(CFG)
 
-# we read from this to setup everything else
-JEKYLL_CONFIG := _config.yml
-
 SWITCH_DIR_SCRIPT := $(SETUP_DIR)/switch-dir.sh
 
 OUT_DIR := $(shell $(ABSOLUTIFY_CMD) $(shell $(QUERY_CFG_CMD) outdir))
@@ -56,14 +61,15 @@ ORG_IN := $(shell find $(IN_DIR) $(ORG_PATTERN) | sort | uniq)
 OUT_PAGES := $(patsubst %.org, %.html, \
 	$(shell $(SWITCH_DIR_SCRIPT) $(IN_DIR) $(OUT_DIR) $(ORG_IN)))
 
-SCRIPTS_DIR := scripts
 OUT_SCRIPTS_DIR := $(OUT_DIR)/$(SCRIPTS_DIR)
 OUT_SCRIPTS := $(patsubst $(SCRIPTS_DIR)/%.coffee,$(OUT_SCRIPTS_DIR)/%.js, \
-	$(shell find $(SCRIPTS_DIR) -name "*.coffee"))
+	$(shell find $(SCRIPTS_DIR) -name "*.coffee")) \
+	$(patsubst $(SCRIPTS_DIR)/%,$(OUT_SCRIPTS_DIR)/%,$(BROWSERIFY_BUNDLE))
 
 STYLES_DIR := styles
 OUT_STYLES_DIR := $(OUT_DIR)/$(STYLES_DIR)
-OUT_STYLES :=
+OUT_STYLES := $(patsubst $(STYLES_DIR)/%,$(OUT_STYLES_DIR)/%, \
+	$(wildcard $(STYLES_DIR)/*.css))
 
 # now htmlize every source file, and copy other html files
 GIT_DIR := .git
@@ -101,15 +107,18 @@ $(OUT_DIRS):
 $(OUT_SCRIPTS_DIR)/%.js: $(SCRIPTS_DIR)/%.coffee | $(OUT_SCRIPTS_DIR)
 	@echo "$< => $(shell $(RELIFY_CMD) $@)"
 	@$(COFFEE_CC) -bcp --no-header $< | $(UGLIFY_JS) $(UGLIFY_JS_OPTS) > $@
-$(OUT_SCRIPTS_DIR)/%.js: $(ORG_INFO_DIR)/%-mini.js
+$(OUT_SCRIPTS_DIR)/%.js: $(ORG_INFO_DIR)/%-mini.js | $(OUT_SCRIPTS_DIR)
 	@echo "$< => $@"
+	@cp $< $@
+$(OUT_SCRIPTS_DIR)/%: $(SCRIPTS_DIR)/% | $(OUT_SCRIPTS_DIR)
+	@echo "$< => $(shell $(RELIFY_CMD) $@)"
 	@cp $< $@
 
 # styles
-$(OUT_STYLES_DIR)/%.css: $(STYLES_DIR)/%.sass
-	@echo "$< => $@"
-	@exit 1
-$(OUT_STYLES_DIR)/%.css: $(ORG_INFO_DIR)/%-mini.css
+$(OUT_STYLES_DIR)/%.css: $(STYLES_DIR)/%.css | $(OUT_STYLES_DIR)
+	@echo "$< => $(shell $(RELIFY_CMD) $@)"
+	@$(UGLIFY_CSS) $< > $@
+$(OUT_STYLES_DIR)/%.css: $(ORG_INFO_DIR)/%-mini.css | $(OUT_SCRIPTS_DIR)
 	@echo "$< => $@"
 	@cp $< $@
 
@@ -122,17 +131,18 @@ $(ORG_INFO_OUT): $(ORG_INFO_PROOF) $(ORG_INFO_OUT_DIR)
 
 # make html from org
 MIGRATE_SCRIPT := $(SETUP_DIR)/migrate-org.el
-DO_EXPORT_EMAIL := f
+DO_EXPORT_EMAIL := $(shell $(QUERY_CFG_CMD) export_email)
+DO_HL_CSS := $(shell $(QUERY_CFG_CMD) highlight_css)
 $(OUT_PAGES): $(ORG_IN) $(DEPS)
 	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(IN_DIR) $(OUT_DIR) \
-		$(DO_EXPORT_EMAIL) $(ORG_IN) # 1>&2 2>/dev/null
+		$(DO_EXPORT_EMAIL) $(DO_HL_CSS) $(ORG_IN) 1>&2 2>/dev/null
 
 # htmlize
 HTMLIZE_TMP_FILE := $(SETUP_DIR)/tmpfile
 HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize-file.sh \
 	$(shell $(QUERY_CFG_CMD) xvfb_disp) $(HTMLIZE_TMP_FILE)
 HTMLIZE_OUT_FILE := $(SETUP_DIR)/output-file
-$(HTMLIZE_OUT) $(COPY_OUT): $(HTMLIZE_IN) $(COPY_IN)
+$(HTMLIZE_OUT) $(COPY_OUT): $(HTMLIZE_IN) $(COPY_IN) # $(DEPS)
 	@for el in $(HTMLIZE_OUT_FILE) $(CURRENT_DIR)/$(HTMLIZE_FILE) \
 		$(IN_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
 		do echo $$el; done > $(HTMLIZE_TMP_FILE)
@@ -142,6 +152,15 @@ $(HTMLIZE_OUT) $(COPY_OUT): $(HTMLIZE_IN) $(COPY_IN)
 # create submodules and dependent packages
 $(SUBMODULE_PROOFS):
 	@git submodule update --init --recursive
+
+$(BROWSERIFY_BUNDLE): $(patsubst %,$(NODE_DIR)/%,$(BROWSERIFY_CONVERSIONS)) \
+		$(BROWSERIFY_CC)
+	@echo -n 'npm modules [ '
+	@for module in $(BROWSERIFY_CONVERSIONS); do \
+		echo -n "$$module "; done
+	@echo "] => $@"
+	@$(BROWSERIFY_CC) -r $(BROWSERIFY_CONVERSIONS) | \
+		$(UGLIFY_JS) $(UGLIFY_JS_OPTS) > $@
 $(NODE_DEPS):
 	@npm install
 
@@ -150,12 +169,13 @@ $(HTML_PARSER):
 
 sweep:
 	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
-	@rm -rf $(HTMLIZE_TMP_FILE) $(HTMLIZE_OUT_FILE)
+	@rm -f $(HTMLIZE_TMP_FILE) $(HTMLIZE_OUT_FILE)
 
 clean: $(DEPS) sweep
 	@$(MAKE) -C $(ORG_INFO_DIR) clean
 	@$(MAKE) -C $(OUT_DIR) clean
 	@rm -f $(HTMLIZE_TMP_FILE)
+	@rm -f $(BROWSERIFY_BUNDLE)
 
 distclean: clean
 	@rm -rf $(NODE_DIR)

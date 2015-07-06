@@ -28,6 +28,21 @@
     (insert msg "\n")
     (append-to-file (point-min) (point-max) output-file)))
 
+(defun make-html-file-fun ()
+  (kill-buffer
+       (let ((buf
+              (with-current-buffer (find-file file)
+                (normal-mode)
+                (add-header)
+                (current-buffer))))
+         (with-current-buffer (htmlize-buffer buf)
+           (format-links-in-region "y" (point-min) (point-max) file)
+           (write-file outfile)
+           (current-buffer)))))
+
+(defun make-nonhtml-file-fun ()
+  (copy-file file outfile-nonhtml t t t t))
+
 (defun htmlize-this-file (file)
   (setq file (expand-file-name file))
   (let* ((outfile-nonhtml
@@ -40,38 +55,45 @@
          (outfile-dir (file-name-directory outfile)))
     (unless (file-exists-p outfile-dir)
       (make-directory outfile-dir t))
-    (when (or (file-newer-than-file-p file outfile)
-              (file-newer-than-file-p load-file-name file)
-              (file-newer-than-file-p transform-file-links-binary file))
-      (send-message
-       (format "%s => %s"
-               (file-relative-name
-                file (expand-file-name (concat this-dir "/..")))
-               (file-relative-name
-                outfile (expand-file-name (concat this-dir "/..")))))
-      (kill-buffer
-       (let ((buf
-              (with-current-buffer (find-file file)
-                (normal-mode)
-                (add-header)
-                (current-buffer))))
-         (with-current-buffer (htmlize-buffer buf)
-           (format-links-in-region "y" (point-min) (point-max) file)
-           (write-file outfile)
-           (current-buffer)))))
-    (when (and (not (makefile-p file))
-               (or (file-newer-than-file-p file outfile-nonhtml)
-                   (file-newer-than-file-p load-file-name file)
-                   (file-newer-than-file-p transform-file-links-binary
-                                           file)))
-      (send-message
-       (format
-        "%s => %s"
-        (file-relative-name
-         file (expand-file-name (concat this-dir "/..")))
-        (file-relative-name
-         outfile-nonhtml (expand-file-name (concat this-dir "/..")))))
-      (copy-file file outfile-nonhtml t t t t))
+    (let ((make-html-file
+           (or (file-newer-than-file-p file outfile)
+               (file-newer-than-file-p load-file-name file)
+               (file-newer-than-file-p transform-file-links-binary file)))
+          (make-nonhtml-file
+           (and (not (makefile-p file))
+                (or (file-newer-than-file-p file outfile-nonhtml)
+                    (file-newer-than-file-p load-file-name file)
+                    (file-newer-than-file-p transform-file-links-binary
+                                            file)))))
+      (cond ((and make-html-file make-nonhtml-file)
+             (send-message
+              (format "%s => [ %s %s ]"
+                      (file-relative-name
+                       file (expand-file-name (concat this-dir "/..")))
+                      (file-relative-name
+                       outfile-nonhtml (expand-file-name
+                                        (concat this-dir "/..")))
+                      (file-relative-name
+                       outfile (expand-file-name (concat this-dir "/..")))))
+             (make-html-file-fun)
+             (make-nonhtml-file-fun))
+            (make-html-file
+             (send-message
+              (format "%s => %s"
+                      (file-relative-name
+                       file (expand-file-name (concat this-dir "/..")))
+                      (file-relative-name
+                       outfile (expand-file-name (concat this-dir "/..")))))
+             (make-html-file-fun))
+            (make-nonhtml-file
+             (send-message
+              (format "%s => %s"
+                      (file-relative-name
+                       file (expand-file-name (concat this-dir "/..")))
+                      (file-relative-name
+                       outfile-nonhtml (expand-file-name
+                                        (concat this-dir "/..")))))
+             (make-nonhtml-file-fun))))
     (call-process "touch" nil nil nil outfile outfile-nonhtml)))
 
 (defadvice org-publish-get-project-from-filename (around ew activate)

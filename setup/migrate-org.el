@@ -74,9 +74,19 @@
          "<td class=\"creator\">%V, %o</td>"
          "</tr></table>"))))
 
-(defvar html-head-format-string
-  (concat "<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n"
-          "<script type=\"text/javascript\" src=\"%s\"></script>"))
+(defvar highlightjs-init "require('highlight.js').initHighlightingOnLoad();")
+
+(defun hl-css () (eq do-highlight-css 'y))
+
+(defun html-head-format-string ()
+  (concat
+   (if (hl-css)
+       "<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n"
+     "%s")
+   "<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n"
+   "<script type=\"text/javascript\" src=\"%s\"></script>\n"
+   "<script type=\"text/javascript\" src=\"%s\"></script>\n"
+   "<script type=\"text/javascript\">%s</script>\n"))
 
 (defvar infojs-opts-format-string
   (concat "path:%s toc:t ltoc:above view:info mouse:underline buttons:t "
@@ -89,6 +99,12 @@
   (expand-file-name (concat (org-info-js-dir) "org-info-mini.js")))
 (defun org-info-js-css ()
   (expand-file-name (concat (org-info-js-dir) "stylesheet-mini.css")))
+
+(defun bundle-js ()
+  (expand-file-name (concat output-dir "/scripts/bundle.js")))
+
+(defun hljs-css ()
+  (expand-file-name (concat output-dir "/styles/tomorrow-night-bright.css")))
 
 (defvar sitemap-filename "sitemap.org")
 
@@ -124,7 +140,16 @@
                       :publishing-function #'org-html-publish-to-html
                       :html-preamble t
                       :html-postamble t
-                      :html-head (format html-head-format-string
+                      :html5-fancy t
+                      :tex t
+                      :html-scripts t
+                      :html-style t
+                      :html-head (format (html-head-format-string)
+                                         (if (hl-css)
+                                             (file-relative-name
+                                              (hljs-css)
+                                              (file-name-directory output-file))
+                                           "")
                                          (file-relative-name
                                           (org-info-js-css)
                                           (file-name-directory output-file))
@@ -132,7 +157,12 @@
                                           (expand-file-name
                                            (concat
                                             output-dir "/scripts/out.js"))
-                                          (file-name-directory output-file)))
+                                          (file-name-directory output-file))
+                                         ;; add and initialize highlightjs
+                                         (file-relative-name
+                                          (bundle-js)
+                                          (file-name-directory output-file))
+                                         highlightjs-init)
                       :infojs-opt
                       (format infojs-opts-format-string
                               (file-relative-name
@@ -144,8 +174,8 @@
                       :html-doctype "xhtml-strict"
                       :auto-sitemap t
                       :sitemap-filename sitemap-filename
-                      :sitemap-title "Site Map"
-                      :link-up sitemap-filename)))
+                      ;; TODO: make up point to site map
+                      :sitemap-title "Site Map")))
               (org-publish-current-file t)  ; goes to output-file
               (let ((sitemap-in
                      (expand-file-name (concat input-dir "/" sitemap-filename)))
@@ -157,7 +187,7 @@
                        ".html"))))
                 (when (or (not (file-exists-p sitemap-out))
                           (file-newer-than-file-p file sitemap-out))
-                  (print-stdout "%s created"
+                  (print-stdout "generated => %s"
                                 (file-relative-name sitemap-in build-dir))
                   (org-publish-org-sitemap (car org-publish-project-alist))
                   (let ((sitemap-tilde (concat sitemap-in "~")))
@@ -185,7 +215,8 @@
       (input-dir (expand-file-name (car (cdr argv))))
       (output-dir (expand-file-name (car (cddr argv))))
       (do-export-email (intern (car (nthcdr 3 argv))))
-      (file-list (mapcar #'expand-file-name (nthcdr 4 argv))))
+      (do-highlight-css (intern (car (nthcdr 4 argv))))
+      (file-list (mapcar #'expand-file-name (nthcdr 5 argv))))
   (load-file-link htmlize-link)
   (require 'htmlize)
   (mapcar #'publish-org-file-no-cache file-list))

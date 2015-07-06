@@ -47,6 +47,26 @@ while ( my $token = $parser->get_token ) {
       print "\"";
     }
     print ">";
+  } elsif ($token->is_start_tag('pre')) {
+    print "<pre";
+    my $attrs = $token->get_attr();
+    my $code_classes;
+    while (my ($k, $v) = each %{$attrs}) {
+      print " $k=\"";
+      if ($k eq 'class') {
+        $code_classes = $v =~ s/src\-([^\s]+)/src\-$1 $1/rg;
+        print $code_classes;
+      } else { print "$v"; }
+      print "\"";
+    }
+    print "><code";
+    if ($code_classes) {
+      print " class=\"$code_classes\"";
+    }
+    print ">"
+  } elsif ($token->is_end_tag('pre')) {
+    print "</code>";
+    print $token->as_is;
   } else {
     print $token->as_is;
   }
