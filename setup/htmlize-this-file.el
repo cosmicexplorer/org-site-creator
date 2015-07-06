@@ -61,6 +61,8 @@
                (file-newer-than-file-p transform-file-links-binary file)))
           (make-nonhtml-file
            (and (not (makefile-p file))
+                (not (string-equal (expand-file-name file)
+                                   (expand-file-name outfile-nonhtml)))
                 (or (file-newer-than-file-p file outfile-nonhtml)
                     (file-newer-than-file-p load-file-name file)
                     (file-newer-than-file-p transform-file-links-binary
