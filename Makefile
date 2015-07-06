@@ -55,7 +55,7 @@ SWITCH_DIR_SCRIPT := $(SETUP_DIR)/switch-dir.sh
 
 OUT_DIR := $(shell $(ABSOLUTIFY_CMD) $(shell $(QUERY_CFG_CMD) outdir))
 ORG_PATTERN := -type f -name "*.org" \
-	$(patsubst %,-not -iwholename "*%/*", $(ORG_INFO_DIR) $(OUT_DIR))
+	$(patsubst %,-not -iwholename "*%/*", $(ORG_INFO_DIR))
 IN_DIR := $(shell $(ABSOLUTIFY_CMD) $(shell $(QUERY_CFG_CMD) indir))
 ORG_IN := $(shell find $(IN_DIR) $(ORG_PATTERN) | sort | uniq)
 OUT_PAGES := $(patsubst %.org, %.html, \
@@ -78,7 +78,7 @@ SPECIAL_FILE_PATTERN := -name ".git*"
 PROJ_FILE_PATTERN := -type f -not $(EXCL_FILE_PATTERN) \
 	-not $(SPECIAL_FILE_PATTERN) \
 	$(patsubst %,-not -iwholename "*%/*", $(GIT_DIR) $(NODE_DIR) \
-		$(OUT_DIR) $(ORG_INFO_DIR) $(HTMLIZE_DIR))
+		$(ORG_INFO_DIR) $(HTMLIZE_DIR))
 
 HTMLIZE_PATTERN := $(PROJ_FILE_PATTERN) -not -name "*.html"
 HTMLIZE_IN := $(shell find $(IN_DIR) $(HTMLIZE_PATTERN))
@@ -89,7 +89,9 @@ HTMLIZE_OUT := $(patsubst %,%.html, \
 COPY_EXCL_FILE := \( -name "Makefile" -or -name ".git*" \)
 COPY_PATTERN := $(PROJ_FILE_PATTERN) -not -name "*.html" -not $(COPY_EXCL_FILE)
 COPY_IN := $(shell find $(IN_DIR) $(COPY_PATTERN))
-COPY_OUT := $(shell $(SWITCH_DIR_SCRIPT) $(IN_DIR) $(OUT_DIR) $(COPY_IN))
+EXCEPT := $(SETUP_DIR)/except.sh
+COPY_OUT := $(shell $(SWITCH_DIR_SCRIPT) $(IN_DIR) $(OUT_DIR) $(COPY_IN) | \
+	$(EXCEPT) $(COPY_IN))
 
 ORG_INFO_OUT_DIR := $(OUT_DIR)/$(ORG_INFO_DIR)
 ORG_INFO_OUT := $(ORG_INFO_OUT_DIR)/stylesheet-mini.css \
@@ -99,12 +101,15 @@ OUT_DIRS := $(OUT_SCRIPTS_DIR) $(OUT_STYLES_DIR) $(ORG_INFO_OUT_DIR)
 
 all: $(OUT_PAGES) $(OUT_SCRIPTS) $(OUT_STYLES) $(HTMLIZE_OUT) \
 	$(HTMLIZE_MAKEFILE) $(COPY_OUT) $(ORG_INFO_OUT) | $(OUT_DIRS)
+	@echo $(OUT_PAGES)
+	@echo $(HTMLIZE_OUT)
 
 $(OUT_DIRS):
 	mkdir -p $(shell $(RELIFY_CMD) $@)
 
 # scripts
-$(OUT_SCRIPTS_DIR)/%.js: $(SCRIPTS_DIR)/%.coffee | $(OUT_SCRIPTS_DIR)
+$(OUT_SCRIPTS_DIR)/%.js: $(SCRIPTS_DIR)/%.coffee $(COFFEE_CC) \
+		| $(OUT_SCRIPTS_DIR)
 	@echo "$< => $(shell $(RELIFY_CMD) $@)"
 	@$(COFFEE_CC) -bcp --no-header $< | $(UGLIFY_JS) $(UGLIFY_JS_OPTS) > $@
 $(OUT_SCRIPTS_DIR)/%.js: $(ORG_INFO_DIR)/%-mini.js | $(OUT_SCRIPTS_DIR)
@@ -173,9 +178,10 @@ sweep:
 	@find . $(EXCL_FILE_PATTERN) -exec rm '{}' ';'
 	@rm -f $(HTMLIZE_TMP_FILE) $(HTMLIZE_OUT_FILE)
 
-clean: $(DEPS) sweep
+clean: sweep
+	@rm -f $(HTMLIZE_OUT) $(OUT_PAGES) $(COPY_OUT)
+	@rm -rf $(ORG_INFO_OUT_DIR) $(OUT_STYLES_DIR) $(OUT_SCRIPTS_DIR)
 	@$(MAKE) -C $(ORG_INFO_DIR) clean
-	@$(MAKE) -C $(OUT_DIR) clean
 	@rm -f $(HTMLIZE_TMP_FILE)
 	@rm -f $(BROWSERIFY_BUNDLE)
 
