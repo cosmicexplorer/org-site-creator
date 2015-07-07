@@ -33,10 +33,6 @@ sub remove_file_links {
   return $bare_link;
 }
 
-# TODO: add prefix option for non-html file links, and re-add the org files
-
-# TODO: write the gui for the igem software
-
 my $parser = HTML::TokeParser::Simple->new(*STDIN);
 
 while ( my $token = $parser->get_token ) {
