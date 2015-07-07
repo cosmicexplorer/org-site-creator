@@ -126,6 +126,15 @@
         (setq pos (match-end num)))
       matches)))
 
+;;; requiring cl may be silly for a single thing, but this script is only called
+;;; once per make, so it's not too much of an issue
+(require 'cl)
+(defadvice org-publish-get-base-files (around match-whole-regexp activate)
+  (let ((res ad-do-it))
+    (remove-if
+     (lambda (file) (string-match-p (ad-get-arg 1) (expand-file-name file)))
+     res)))
+
 (defun setup-org-proj-alist (&optional buf-file-name)
   (setq org-publish-project-alist
         (list
@@ -143,6 +152,11 @@
           :html-postamble t
           :html-html5-fancy t
           :tex t
+          ;; let's not include the org files in this repo
+          ;; this is a hack but i was unsuccessful in trying to narrow it down
+          ;; more, so if you have a subfolder named org-info-js, you're out of
+          ;; luck
+          :exclude "org\\-info\\-js"
           :html-scripts t
           :html-style t
           :html-head
@@ -204,8 +218,9 @@
                        (file-name-nondirectory (or (buffer-file-name)
                                                    buf-file-name)))
                      (let ((sitemap-out
-                            (concat (file-name-sans-extension sitemap-filename)
-                                    ".html")))
+                            (concat
+                             (file-name-sans-extension sitemap-filename)
+                             ".html")))
                        (if (file-exists-p sitemap-filename)
                            (file-relative-name
                             sitemap-out (file-name-directory output-file))

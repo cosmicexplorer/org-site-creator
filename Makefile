@@ -186,7 +186,7 @@ clean: sweep
 	@rm -f $(HTMLIZE_OUT) $(OUT_PAGES) $(COPY_OUT)
 	@rm -rf $(ORG_INFO_OUT_DIR) $(OUT_STYLES_DIR) $(OUT_SCRIPTS_DIR)
 	@$(MAKE) -C $(ORG_INFO_DIR) clean
-	@rm -f $(HTMLIZE_TMP_FILE) $(INPUT_DIR)/sitemap.{org,html,org.html}
+	@rm -f $(HTMLIZE_TMP_FILE) $(IN_DIR)/sitemap.{org,html,org.html}
 	@rm -f $(BROWSERIFY_BUNDLE)
 
 distclean: clean
