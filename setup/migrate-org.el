@@ -217,17 +217,13 @@
                           (file-name-directory output-file))
                        (file-name-nondirectory (or (buffer-file-name)
                                                    buf-file-name)))
+                     ;; the user already gets their sitemap overwritten
                      (let ((sitemap-out
                             (concat
                              (file-name-sans-extension sitemap-filename)
                              ".html")))
-                       (if (file-exists-p sitemap-filename)
-                           (file-relative-name
-                            sitemap-out (file-name-directory output-file))
-                         (file-name-nondirectory
-                          (or
-                           (buffer-file-name)
-                           buf-file-name)))))))
+                       (file-relative-name
+                        sitemap-out (file-name-directory output-file))))))
           :html-container "div"
           :html-doctype "xhtml-strict"
           :auto-sitemap t
