@@ -1,0 +1,54 @@
+/* Hemisu Dark */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - http://noahfrederick.com/vim-color-scheme-hemisu/ */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+
+.hemisu-comment,
+pre .hljs-comment,
+pre .hljs-xml .hljs-doctype,
+pre .hljs-html .hljs-doctype {
+  color: #999999;
+}
+
+.hemisu-accent1,
+pre .hljs-number,
+pre .hljs-ruby .hljs-keyword {
+  color: #538192;
+}
+
+.hemisu-accent2,
+pre .hljs-string,
+pre .hljs-regexp,
+pre .hljs-xml .hljs-value,
+pre .hljs-html .hljs-value {
+  color: #739200;
+}
+
+.hemisu-accent3,
+pre .hljs-keyword,
+pre .hljs-title,
+pre .hljs-constant,
+pre .hljs-xml .hljs-tag,
+pre .hljs-html .hljs-tag,
+pre .hljs-css .hljs-rules .hljs-attribute {
+  color: #ff0055;
+}
+
+.hemisu-accent4 {
+  color: #503d15;
+}
+
+pre code {
+  display: block;
+  color: #111111;
+  font-family: Menlo, Monaco, Consolas, monospace;
+  line-height: 1.5;
+}
+
+pre .hljs-xml .hljs-tag .hljs-title {
+  color: #111111;
+}
+
+pre .hljs-html .hljs-tag .hljs-title {
+  color: #111111;
+}

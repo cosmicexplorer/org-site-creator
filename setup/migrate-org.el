@@ -245,7 +245,8 @@
                   (delete-region (point) (line-end-position))
                   (insert
                    (let* ((buf (find-file insert-str))
-                          (str (with-current-buffer buf (buffer-string))))
+                          (str
+                           (with-current-buffer buf (buffer-string))))
                      (kill-buffer buf)
                      str))))
 

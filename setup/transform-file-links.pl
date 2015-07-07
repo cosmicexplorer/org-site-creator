@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use HTML::TokeParser::Simple;
 use File::Basename;
+use File::Spec;
 
 my ($do_add_html, $file_name) = @ARGV;
 my $file_name_exists = (scalar @ARGV eq 2);
@@ -30,6 +31,9 @@ sub remove_file_links {
   }
   return $bare_link;
 }
+
+# TODO: relify internal file links and add prefix option for non-html file links
+# TODO: write the gui for the software
 
 my $parser = HTML::TokeParser::Simple->new(*STDIN);
 
