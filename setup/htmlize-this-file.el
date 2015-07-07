@@ -13,7 +13,11 @@
     (propertize
      (file-name-nondirectory (buffer-file-name))
      'htmlize-link
-     (list :uri (file-name-nondirectory (buffer-file-name))))
+     (list :uri
+           (concat link-prefix
+                   (replace-regexp-in-string
+                    "\\.html$" ""
+                    (file-name-nondirectory (buffer-file-name))))))
     (or (and (boundp 'comment-end) comment-end) ""))))
 
 (defvar this-dir (file-name-directory load-file-name))
@@ -107,9 +111,11 @@
   (kill-buffer tmpbuf)
   (let ((output-file (car argv))
         (htmlize-link (cadr argv))
-        (input-dir (expand-file-name (car (cddr argv))))
-        (output-dir (expand-file-name (car (nthcdr 3 argv))))
-        (input-files (nthcdr 4 argv)))
+        (link-prefix (substring (car (cddr argv)) 1))
+        (input-dir (expand-file-name (car (nthcdr 3 argv))))
+        (output-dir (expand-file-name (car (nthcdr 4 argv))))
+        (input-files (nthcdr 5 argv)))
+    (message "%S" argv)
     (load-file-link htmlize-link)
     (require 'htmlize)
     ;; disgusting, disgusting hack

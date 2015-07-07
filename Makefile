@@ -149,8 +149,11 @@ HTMLIZE_TMP_FILE := $(SETUP_DIR)/tmpfile
 HTMLIZE_SCRIPT := $(SETUP_DIR)/htmlize-file.sh $(HTMLIZE_TMP_FILE) \
 	$(shell $(QUERY_CFG_CMD) xvfb_disp)
 HTMLIZE_OUT_FILE := $(SETUP_DIR)/output-file
+# '-' added so the argument is never empty
+HTMLIZE_LINK_PREFIX := $(shell echo "-$$($(QUERY_CFG_CMD) html_prefix)")
 $(HTMLIZE_OUT) $(COPY_OUT): $(HTMLIZE_IN) $(COPY_IN) $(DEPS)
 	@for el in $(HTMLIZE_OUT_FILE) $(CURRENT_DIR)/$(HTMLIZE_FILE) \
+		$(HTMLIZE_LINK_PREFIX) \
 		$(IN_DIR) $(OUT_DIR) $(HTMLIZE_IN); \
 		do echo $$el; done > $(HTMLIZE_TMP_FILE)
 	@$(HTMLIZE_SCRIPT) 2>/dev/null

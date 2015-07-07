@@ -25,15 +25,17 @@ sub remove_file_links {
     $bare_link = $link =~ s/^file://r;
   }
   # if this is a link to the file itself, don't append .html
+  my $fileregex = quotemeta($file_name);
   if ($add_html =~ /^[yY]/ and $bare_link !~ /^#/ and $bare_link !~ /\.html$/
-      and ((not $file_name_exists) or ($bare_link ne $file_name))){
+      and ((not $file_name_exists) or ($bare_link !~ /$fileregex$/))){
     return $bare_link . ".html";
   }
   return $bare_link;
 }
 
-# TODO: relify internal file links and add prefix option for non-html file links
-# TODO: write the gui for the software
+# TODO: add prefix option for non-html file links, and re-add the org files
+
+# TODO: write the gui for the igem software
 
 my $parser = HTML::TokeParser::Simple->new(*STDIN);
 
