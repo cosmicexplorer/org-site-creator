@@ -55,10 +55,10 @@ DEPS := $(SUBMODULE_PROOFS) $(NODE_DEPS) $(PERL_DEPS) \
 SWITCH_DIR_SCRIPT := $(SETUP_DIR)/switch-dir.sh
 
 OUT_DIR := $(shell $(ABSOLUTIFY_CMD) $(shell $(QUERY_CFG_CMD) outdir))
-ORG_PATTERN := -type f -name "*.org" \
-	$(patsubst %,-not -iwholename "*%/*", $(ORG_INFO_DIR))
+ORG_PATTERN := -type f -name "*.org"
 IN_DIR := $(shell $(ABSOLUTIFY_CMD) $(shell $(QUERY_CFG_CMD) indir))
-ORG_IN := $(shell find $(IN_DIR) $(ORG_PATTERN) | sort | uniq)
+ORG_IN := $(shell find $(IN_DIR) $(ORG_PATTERN) | sort | uniq | \
+		$(EXCEPT) $(shell find $(CURRENT_DIR) $(ORG_PATTERN)))
 OUT_PAGES := $(patsubst %.org, %.html, \
 	$(shell $(SWITCH_DIR_SCRIPT) $(IN_DIR) $(OUT_DIR) $(ORG_IN)))
 
