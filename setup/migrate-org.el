@@ -1,5 +1,5 @@
 #!/bin/bash
-"i:"; exec emacs --script "$0" -- "$@" # -*- mode: emacs-lisp -*-
+":"; exec emacs --quick --script "$0" -- "$@" # -*- mode: emacs-lisp -*-
 (load (concat (file-name-directory load-file-name)
               "emacs-script-common.el") nil t)
 

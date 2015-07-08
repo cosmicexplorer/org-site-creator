@@ -45,10 +45,10 @@ ORG_INFO_FILE := $(ORG_INFO_DIR)/org-info.js
 ORG_STYLE_FILE := $(ORG_INFO_DIR)/stylesheet.css
 ORG_INFO_PROOF := $(ORG_INFO_DIR)/README.md
 
-ORG_MODE_DIR := org-mode 
-ORG_MODE_PROOF := $(strip $(ORG_MODE_DIR))/README
-ORG_PUB_FILE := $(strip $(ORG_MODE_DIR))/lisp/ox-publish.el
-ORG_LOADDEFS := $(strip $(ORG_MODE_DIR))/lisp/org-loaddefs.el
+ORG_MODE_DIR := org-mode
+ORG_MODE_PROOF := $(ORG_MODE_DIR)/README
+ORG_PUB_FILE := $(ORG_MODE_DIR)/lisp/ox-publish.el
+ORG_LOADDEFS := $(ORG_MODE_DIR)/lisp/org-loaddefs.el
 
 SUBMODULES := $(HTMLIZE_DIR) $(ORG_LOADDEFS) $(ORG_INFO_DIR) $(ORG_MODE_DIR)
 SUBMODULE_PROOFS := $(HTMLIZE_PROOF) $(ORG_INFO_PROOF) $(ORG_MODE_PROOF)
@@ -145,9 +145,9 @@ DO_EXPORT_EMAIL := $(shell $(QUERY_CFG_CMD) export_email || echo y)
 DO_HL_CSS := $(shell $(QUERY_CFG_CMD) highlight_css || echo n)
 DO_ORG_INFO := $(shell $(QUERY_CFG_CMD) org_info || echo y)
 $(OUT_PAGES): $(ORG_IN) $(DEPS) $(ORG_LOADDEFS)
-	$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(ORG_PUB_FILE) $(IN_DIR) $(OUT_DIR) \
+	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(ORG_PUB_FILE) $(IN_DIR) $(OUT_DIR) \
 		$(DO_EXPORT_EMAIL) $(DO_HL_CSS) $(DO_ORG_INFO) $(ORG_IN) \
-		# 1>&2 2>/dev/null
+		1>&2 2>/dev/null
 
 # htmlize
 HTMLIZE_TMP_FILE := $(SETUP_DIR)/tmpfile
