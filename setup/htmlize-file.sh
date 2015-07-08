@@ -19,8 +19,6 @@ nw_arg=""
 if [ "$display_num" = 'nw' ]; then
   nw_arg="-nw"
   display_num="$DISPLAY"
-elif [ "$display_num" = "" ]; then
-  display_num="$DISPLAY"
 elif hash Xvfb 2>/dev/null; then
   Xvfb "$display_num" -screen 1 800x600x24 &
   xvfb_pid="$!"
