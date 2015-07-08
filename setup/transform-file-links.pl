@@ -27,7 +27,9 @@ sub remove_file_links {
   # if this is a link to the file itself, don't append .html
   my $fileregex = quotemeta($file_name);
   if ($add_html =~ /^[yY]/ and $bare_link !~ /^#/ and $bare_link !~ /\.html$/
-      and ((not $file_name_exists) or ($bare_link !~ /$fileregex$/))){
+      and ((not $file_name_exists) or ($bare_link !~ /$fileregex$/)) and
+      # don't modify http://, etc links, or plain old // links
+      $bare_link !~ /^([a-zA-Z0-9]+:)?\/\//){
     return $bare_link . ".html";
   }
   return $bare_link;
