@@ -10,6 +10,7 @@ A truly disgusting hack to put together a site from a bunch of org (and other) f
 - [emacs](https://gnu.org/software/emacs), ideally version 24 or above, I haven't tested with earlier versions.
 - [perl](https://perl.org)
 - [make](https://gnu.org/software/make), [grep](https://gnu.org/software/grep/), [findutils](https://gnu.org/software/findutils/), and [coreutils](https://gnu.org/software/coreutils).
+- [git](https://git-scm.com/) for the submodules.
 
 # Directions
 
