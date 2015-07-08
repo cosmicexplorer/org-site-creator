@@ -1,8 +1,10 @@
 [submodule "htmlize"]
 	path = htmlize
+	branch = master
 	url = git@github.com:cosmicexplorer/htmlize.git
         ignore = dirty
 [submodule "org-info-js"]
 	path = org-info-js
 	url = git@github.com:cosmicexplorer/org-info-js.git
         ignore = dirty
+	branch = master
