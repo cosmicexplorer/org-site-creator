@@ -1,81 +1,9 @@
 #!/bin/bash
-":"; exec emacs --quick --script "$0" -- "$@" # -*- mode: emacs-lisp -*-
+"i:"; exec emacs --script "$0" -- "$@" # -*- mode: emacs-lisp -*-
 (load (concat (file-name-directory load-file-name)
               "emacs-script-common.el") nil t)
 
 (setq build-dir default-directory)
-
-(require 'ox-publish)
-
-;;; we don't want org to use its cache here since we're using make, but these
-;;; functions are buggy and throw errors anyway, even when we tell org not to
-;;; use its cache
-(defadvice org-publish-needed-p (around publish-always-needed activate)
-  (setq ad-return-value t))
-(defadvice org-publish-cache-set (around no-publish-cache-set activate)
-  (setq ad-return-value nil))
-(defadvice org-publish-cache-get (around no-publish-cache-get activate)
-  (setq ad-return-value nil))
-(defadvice org-publish-write-cache-file (around no-write-cache activate)
-  (setq ad-return-value nil))
-(defadvice org-publish-cache-file-needs-publishing (around pub activate)
-  (setq ad-return-value))
-(defun org-font-lock-ensure () (font-lock-fontify-buffer))
-
-(defvar my-org-timestamp-format "%Y-%m-%d@%H:%M:%S")
-
-(defun obscure-email-format-string (str class)
-  (concat "<a class=\"" class "\">" str "</a>"))
-
-(defvar emacs-url "http://gnu.org/software/emacs/")
-(defun emacs-version-string ()
-  (concat "<a href=\"" emacs-url "\">Emacs</a> " emacs-version))
-(defvar org-url "http://orgmode.org")
-(defun org-version-string ()
-  (concat "<a href=\"" org-url "\">Org</a> " (org-version)))
-
-(defadvice org-html-format-spec (around add-my-format-chars activate)
-  (let* ((info (ad-get-arg 0))
-         (res ad-do-it))
-    (setq ad-return-value
-          (append res
-                  `((?D . ,(let ((file (plist-get info :input-file)))
-                             (format-time-string
-                              my-org-timestamp-format
-                              (if file (nth 5 (file-attributes file))
-                                (current-time)))))
-                    (?E . ,(let ((email-str (plist-get info :email)))
-                             (cond ((eq do-export-email 'y)
-                                    (concat
-                                     "<a href=\"mailto:" email-str "\">"
-                                     email-str "</a>"))
-                                   ((eq do-export-email 'f)
-                                    (obscure-email-format-string
-                                     email-str "format_eval"))
-                                   (t ""))))
-                    (?f . ,(let ((file (plist-get info :input-file)))
-                             (file-name-sans-extension
-                              (file-name-nondirectory file))))
-                    (?F . ,(plist-get info :input-file))
-                    (?o . ,(org-version-string))
-                    (?V . ,(emacs-version-string)))))))
-
-(setq org-html-postamble-format
-      (list
-       (list
-        "en"
-        ;; couldn't figure out how to do this with divs. sue me.
-        (concat
-         "<table><tr>"
-         "<td class=\"author\">%a</td>"
-         "<td class=\"source\"><a href=\"%f.org.html\">"
-         "See Org Source</a></td>"
-         "<td class=\"date\">Date: %D</td>"
-         "</tr><tr>"
-         "<td class=\"email\">%E</td>"
-         "<td></td>"
-         "<td class=\"creator\">%V, %o</td>"
-         "</tr></table>"))))
 
 (defvar highlightjs-init "require('highlight.js').initHighlightingOnLoad();")
 
@@ -126,14 +54,6 @@
         (setq pos (match-end num)))
       matches)))
 
-;;; requiring cl may be silly for a single thing, but this script is only called
-;;; once per make, so it's not too much of an issue
-(require 'cl)
-(defadvice org-publish-get-base-files (around match-whole-regexp activate)
-  (let ((res ad-do-it))
-    (remove-if
-     (lambda (file) (string-match-p (ad-get-arg 1) (expand-file-name file)))
-     res)))
 
 (defun setup-org-proj-alist (&optional buf-file-name)
   (setq org-publish-project-alist
@@ -283,15 +203,95 @@
 (defun or-fun (a b)
   (or a b))
 
+(defun setup-advice-n-stuff ()
+;;; we don't want org to use its cache here since we're using make, but these
+;;; functions are buggy and throw errors anyway, even when we tell org not to
+;;; use its cache
+  (defadvice org-publish-needed-p (around publish-always-needed activate)
+    (setq ad-return-value t))
+  (defadvice org-publish-cache-set (around no-publish-cache-set activate)
+    (setq ad-return-value nil))
+  (defadvice org-publish-cache-get (around no-publish-cache-get activate)
+    (setq ad-return-value nil))
+  (defadvice org-publish-write-cache-file (around no-write-cache activate)
+    (setq ad-return-value nil))
+  (defadvice org-publish-cache-file-needs-publishing (around pub activate)
+    (setq ad-return-value))
+  (defun org-font-lock-ensure () (font-lock-fontify-buffer))
+  (defun font-lock-ensure () (font-lock-fontify-buffer))
+  (defvar my-org-timestamp-format "%Y-%m-%d@%H:%M:%S")
+  (defadvice org-html-format-spec (around add-my-format-chars activate)
+    (let* ((info (ad-get-arg 0))
+	   (res ad-do-it))
+      (setq ad-return-value
+	    (append res
+		    `((?D . ,(let ((file (plist-get info :input-file)))
+			       (format-time-string
+				my-org-timestamp-format
+				(if file (nth 5 (file-attributes file))
+				  (current-time)))))
+		      (?E . ,(let ((email-str (plist-get info :email)))
+			       (cond ((eq do-export-email 'y)
+				      (concat
+				       "<a href=\"mailto:" email-str "\">"
+				       email-str "</a>"))
+				     ((eq do-export-email 'f)
+				      (obscure-email-format-string
+				       email-str "format_eval"))
+				     (t ""))))
+		      (?f . ,(let ((file (plist-get info :input-file)))
+			       (file-name-sans-extension
+				(file-name-nondirectory file))))
+		      (?F . ,(plist-get info :input-file))
+		      (?o . ,(org-version-string))
+		      (?V . ,(emacs-version-string)))))))
+  (defun obscure-email-format-string (str class)
+    (concat "<a class=\"" class "\">" str "</a>"))
+  (setq org-html-postamble-format
+	(list
+	 (list
+	  "en"
+	  ;; couldn't figure out how to do this with divs. sue me.
+	  (concat
+	   "<table><tr>"
+	   "<td class=\"author\">%a</td>"
+	   "<td class=\"source\"><a href=\"%f.org.html\">"
+	   "See Org Source</a></td>"
+	   "<td class=\"date\">Date: %D</td>"
+	   "</tr><tr>"
+	   "<td class=\"email\">%E</td>"
+	   "<td></td>"
+	   "<td class=\"creator\">%V, %o</td>"
+	   "</tr></table>"))))
+
+;;; requiring cl may be silly for a single thing, but this script is only called
+;;; once per make, so it's not too much of an issue
+  (require 'cl)
+  (defadvice org-publish-get-base-files (around match-whole-regexp activate)
+    (let ((res ad-do-it))
+      (remove-if
+       (lambda (file) (string-match-p (ad-get-arg 1) (expand-file-name file)))
+       res)))
+  (defvar emacs-url "http://gnu.org/software/emacs/")
+  (defun emacs-version-string ()
+    (concat "<a href=\"" emacs-url "\">Emacs</a> " emacs-version))
+  (defvar org-url "http://orgmode.org")
+  (defun org-version-string ()
+    (concat "<a href=\"" org-url "\">Org</a> " (org-version))))
+
 (let ((htmlize-link (car argv))
-      (input-dir (expand-file-name (car (cdr argv))))
-      (output-dir (expand-file-name (car (cddr argv))))
-      (do-export-email (intern (car (nthcdr 3 argv))))
-      (do-highlight-css (intern (car (nthcdr 4 argv))))
-      (do-org-info (intern (car (nthcdr 5 argv))))
-      (file-list (mapcar #'expand-file-name (nthcdr 6 argv))))
+      (org-mode-link (car (cdr argv)))
+      (input-dir (expand-file-name (car (cddr argv))))
+      (output-dir (expand-file-name (car (nthcdr 3 argv))))
+      (do-export-email (intern (car (nthcdr 4 argv))))
+      (do-highlight-css (intern (car (nthcdr 5 argv))))
+      (do-org-info (intern (car (nthcdr 6 argv))))
+      (file-list (mapcar #'expand-file-name (nthcdr 7 argv))))
+  (load-file-link org-mode-link)
+  (require 'ox-publish)
   (load-file-link htmlize-link)
   (require 'htmlize)
+  (setup-advice-n-stuff)
   (let ((sitemap-in
          (expand-file-name (concat input-dir "/" sitemap-filename)))
         (sitemap-out

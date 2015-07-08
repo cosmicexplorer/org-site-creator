@@ -8,3 +8,7 @@
 	url = git@github.com:cosmicexplorer/org-info-js.git
         ignore = dirty
 	branch = master
+[submodule "org-mode"]
+	path = org-mode
+	url = git://orgmode.org/org-mode.git
+	branch = master

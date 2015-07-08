@@ -7,10 +7,11 @@ A truly disgusting hack to put together a site from a bunch of org (and other) f
 
 - [Xvfb](http://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml) isn't required, but makes the htmlized output look more like your actual environment if you use emacs in graphical mode. If you keep emacs in `nw` mode, then just just set `xvfb_disp` to `nw` and you should be fine. You can usually get it through your distribution's package manager.
 - [node/npm](https://nodejs.org)
-- [emacs](https://gnu.org/software/emacs), ideally version 24 or above, I haven't tested with earlier versions.
+- [emacs](https://gnu.org/software/emacs), ideally version 24 or above, I haven't tested with earlier versions. If it yells at you about undefined functions, just build the [development version](http://savannah.gnu.org/projects/emacs/), I don't really care about trying to support older emacsen.
 - [perl](https://perl.org)
 - [make](https://gnu.org/software/make), [grep](https://gnu.org/software/grep/), [findutils](https://gnu.org/software/findutils/), and [coreutils](https://gnu.org/software/coreutils).
 - [git](https://git-scm.com/) for the submodules.
+- [texinfo](http://www.gnu.org/software/texinfo/) for `makeinfo`, to build the [org-mode](https://org-mode.org) submodule.
 
 # Directions
 
@@ -31,3 +32,4 @@ A truly disgusting hack to put together a site from a bunch of org (and other) f
 3. It takes like a minute to run which is kind of annoying.
 4. Sometimes it doesn't work, for a variety of reasons. Typically, run `make rebuild` once or twice will solve the issue. If not, run `make distclean`, then `make` again, which might help. Uncommenting the `1>&2 2>/dev/null` in the `$(OUT_PAGES)` and `$(HTMLIZE_OUT)` is typically what I do when those fail to build (everything usually builds pretty reliably).
 5. htmlized output looks prettier if you run it on your own personal box instead of a build server or whatever, since it represents the file as emacs would represent it to you, so a bare emacs will look pretty flat.
+6. Installing from CPAN automatically only works sometimes. Feel free to run make a few more times, or make as a root user or under sudo, until it works.
