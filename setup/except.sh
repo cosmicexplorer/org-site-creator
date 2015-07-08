@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # returns only those lines of stdin that can't be found amongst the arguments
 while read line; do
