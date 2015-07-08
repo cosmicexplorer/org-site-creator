@@ -1,4 +1,4 @@
-.PHONY: all clean sweep distclean rebuild serve
+.PHONY: all clean sweep distclean rebuild serve HTML_TokeParser_Simple
 .DELETE_ON_ERROR:
 
 # utilities
@@ -142,7 +142,7 @@ DO_ORG_INFO := $(shell $(QUERY_CFG_CMD) org_info || echo y)
 $(OUT_PAGES): $(ORG_IN) $(DEPS)
 	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(IN_DIR) $(OUT_DIR) \
 		$(DO_EXPORT_EMAIL) $(DO_HL_CSS) $(DO_ORG_INFO) $(ORG_IN) \
-		1>&2 2>/dev/null
+		# 1>&2 2>/dev/null
 
 # htmlize
 HTMLIZE_TMP_FILE := $(SETUP_DIR)/tmpfile

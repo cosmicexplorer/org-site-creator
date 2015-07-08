@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # has to be run in graphical mode to get the right colors, hence the xvfb
 # shenanigans. if it seems to be failing and you can't see why because of this
