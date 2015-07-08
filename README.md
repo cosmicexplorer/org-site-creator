@@ -1,7 +1,7 @@
 org-site-creator
 ================
 
-A truly disgusting hack to put together a site from a bunch of org (and other) files.
+A truly disgusting hack to put together a site from a bunch of org (and other) files. Example repo is [my trashy attempt at a website](https://github.com/cosmicexplorer/cosmicexplorer.github.io) (make sure to checkout the `site` branch after cloning, master only has the output and no build system).
 
 # Dependencies
 
