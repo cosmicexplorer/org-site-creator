@@ -145,9 +145,9 @@ DO_EXPORT_EMAIL := $(shell $(QUERY_CFG_CMD) export_email || echo y)
 DO_HL_CSS := $(shell $(QUERY_CFG_CMD) highlight_css || echo n)
 DO_ORG_INFO := $(shell $(QUERY_CFG_CMD) org_info || echo y)
 $(OUT_PAGES): $(ORG_IN) $(DEPS) $(ORG_LOADDEFS)
-	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(ORG_PUB_FILE) $(IN_DIR) $(OUT_DIR) \
-		$(DO_EXPORT_EMAIL) $(DO_HL_CSS) $(DO_ORG_INFO) $(ORG_IN) \
-		1>&2 2>/dev/null
+	@$(MIGRATE_SCRIPT) $(HTMLIZE_FILE) $(ORG_PUB_FILE) $(IN_DIR) \
+		$(OUT_DIR) $(DO_EXPORT_EMAIL) $(DO_HL_CSS) $(DO_ORG_INFO) \
+		$(ORG_IN) 1>&2 2>/dev/null
 
 # htmlize
 HTMLIZE_TMP_FILE := $(SETUP_DIR)/tmpfile
