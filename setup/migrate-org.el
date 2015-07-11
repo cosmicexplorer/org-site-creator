@@ -72,11 +72,10 @@
           :html-postamble t
           :html-html5-fancy t
           :tex t
-          ;; let's not include the org files in this repo
-          ;; this is a hack but i was unsuccessful in trying to narrow it down
-          ;; more, so if you have a subfolder named org-info-js, you're out of
-          ;; luck
-          :exclude "org\\-info\\-js"
+          ;; let's not include the org files in this repo this is a hack but i
+          ;; was unsuccessful in trying to narrow it down more, so if you have a
+          ;; subfolder named org-info-js or org-mode, you're out of luck
+          :exclude "\\(org\\-info\\-js\\|org\\-mode\\)"
           :html-scripts t
           :html-style t
           :html-head
