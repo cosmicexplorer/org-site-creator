@@ -1,4 +1,4 @@
-.PHONY: all clean sweep distclean rebuild serve HTML_TokeParser_Simple
+.PHONY: all clean sweep distclean rebuild serve HTML_TokeParser_Simple html_only
 .DELETE_ON_ERROR:
 
 # utilities
@@ -107,6 +107,8 @@ OUT_DIRS := $(OUT_SCRIPTS_DIR) $(OUT_STYLES_DIR) $(ORG_INFO_OUT_DIR)
 
 all: $(OUT_PAGES) $(OUT_SCRIPTS) $(OUT_STYLES) $(HTMLIZE_OUT) \
 	$(HTMLIZE_MAKEFILE) $(COPY_OUT) $(ORG_INFO_OUT) | $(OUT_DIRS)
+
+html_only: $(OUT_PAGES)
 
 $(OUT_DIRS):
 	mkdir -p $(shell $(RELIFY_CMD) $@)
