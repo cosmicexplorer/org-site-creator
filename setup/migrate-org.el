@@ -20,8 +20,8 @@
        "<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n"
      "%s")
    "<script type=\"text/javascript\" src=\"%s\"></script>\n"
-   "<script type=\"text/javascript\" src=\"%s\"></script>\n"
-   "<script type=\"text/javascript\">%s</script>\n"))
+   "<script type=\"text/javascript\">%s</script>\n"
+   "<script type=\"text/javascript\" src=\"%s\"></script>\n"))
 
 (defvar infojs-opts-format-string
   (concat "path:%s toc:t ltoc:above view:info mouse:underline buttons:t "
@@ -101,16 +101,16 @@
                                  (org-info-js-css)
                                  (file-name-directory output-file))
                               "")
-                            (file-relative-name
-                             (expand-file-name
-                              (concat
-                               output-dir "/scripts/out.js"))
-                             (file-name-directory output-file))
                             ;; add and initialize highlightjs
                             (file-relative-name
                              (bundle-js)
                              (file-name-directory output-file))
-                            highlightjs-init)))
+                            highlightjs-init
+                            (file-relative-name
+                             (expand-file-name
+                              (concat
+                               output-dir "/scripts/out.js"))
+                             (file-name-directory output-file)))))
           :infojs-opt
           (let ((indexfile (expand-file-name
                             (concat input-dir "/"

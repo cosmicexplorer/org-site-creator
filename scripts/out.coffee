@@ -30,9 +30,16 @@ readFormatString = (str) ->
       res = fmtStr.indexOf '%', ind
     fmtStr
 
+html2Arr = (htmlCollection) ->
+  Array.prototype.slice.call htmlCollection, 0
+
+hljs = require 'highlight.js'
+
 # hopefully the web scrapers won't spam me as easily
 document.addEventListener 'DOMContentLoaded', (ev) ->
-  formatStringLinks = document.querySelectorAll('a.format_eval')
-  for i in [0..(formatStringLinks.length - 1)]
-    el = formatStringLinks[i]
+  formatStringLinks = html2Arr document.querySelectorAll('a.format_eval')
+  for el in formatStringLinks
     el.href = "mailto:#{readFormatString(el.innerHTML)}"
+  inlineCodeBlocks = html2Arr document.querySelectorAll('span.inline-code code')
+  for block in inlineCodeBlocks
+    hljs.highlightBlock block

@@ -58,7 +58,9 @@ while ( my $token = $parser->get_token ) {
       print "\"";
     }
     print ">";
-  } elsif ($token->is_start_tag('pre')) {
+  }
+  # add code tags after pre tags, and pre tags after code tags
+  elsif ($token->is_start_tag('pre')) {
     print "<pre";
     my $attrs = $token->get_attr();
     my $code_classes;
@@ -78,6 +80,12 @@ while ( my $token = $parser->get_token ) {
   } elsif ($token->is_end_tag('pre')) {
     print "</code>";
     print $token->as_is;
+  } elsif ($token->is_start_tag('code')) {
+    print '<span class="inline-code">';
+    print $token->as_is;
+  } elsif ($token->is_end_tag('code')) {
+    print $token->as_is;
+    print "</span>";
   } else {
     print $token->as_is;
   }
