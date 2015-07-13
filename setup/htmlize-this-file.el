@@ -38,6 +38,7 @@
               (with-current-buffer (find-file file)
                 (normal-mode)
                 (add-header)
+                (fill-region (point-min) (point-max))
                 (current-buffer))))
          (with-current-buffer (htmlize-buffer buf)
            (format-links-in-region "y" (point-min) (point-max) file)
