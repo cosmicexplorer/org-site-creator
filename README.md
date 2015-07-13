@@ -27,7 +27,7 @@ A truly disgusting hack to put together a site from a bunch of org (and other) f
 
 # Gotchas
 
-1. I haven't fixed the make dependencies so that `make` will always detect when changes need to be made, so you'll have to run `make rebuild` instead of `make` in pretty much any situation. Due to the possibility that the input and output directories can contain each other, it's conceivable that that might not even be possible (?). I doubt it — the better answer is that I'm just too lazy to fix it. This is in large part because the htmlization and html generation from org files is done in batch mode; again, this could still be fixed in the Makefile, but it's not really a priority right now.
+1. I haven't fixed the make dependencies so that `make` will always detect when changes need to be made, so you'll have to run `make rebuild` instead of `make` in pretty much any situation. This is in large part because the htmlization and html generation from org files is done in batch mode; again, this could still be fixed in the Makefile, but it's not really a priority right now.
 2. It takes like 30 seconds to generate stuff. Sorry about that. If you just changed your org files and want to see the output, `make html_only` will only rebuild those that have changed (but NOT the htmlized versions), which takes much less time than `make rebuild`.
 3. It makes three directories in your specified output directory; `styles`, `scripts`, and `org-info-js`. Don't put anything in these, since they'll be deleted whenever you remake.
 4. `indir` and `outdir` can be literally anything you want, including the same thing, including each other, etc.
