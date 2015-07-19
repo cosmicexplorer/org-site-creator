@@ -16,25 +16,25 @@ EXCEPT := $(SETUP_DIR)/except.sh
 
 # npm
 NODE_DIR := node_modules
-NPM_BIN = $(shell npm bin)
-COFFEE_CC = $(NPM_BIN)/coffee
-UGLIFY_JS = $(NPM_BIN)/uglifyjs
+NPM_BIN := $(NODE_DIR)/.bin
+COFFEE_CC := $(NPM_BIN)/coffee
+UGLIFY_JS := $(NPM_BIN)/uglifyjs
 UGLIFY_JS_OPTS := -mc --screw-ie8 2>/dev/null
-UGLIFY_CSS = $(NPM_BIN)/uglifycss
-BROWSERIFY_CC = $(NPM_BIN)/browserify
+UGLIFY_CSS := $(NPM_BIN)/uglifycss
+BROWSERIFY_CC := $(NPM_BIN)/browserify
 
 SCRIPTS_DIR := scripts
 HIGHLIGHT_JS := highlight.js
 BROWSERIFY_CONVERSIONS := $(HIGHLIGHT_JS)
 BROWSERIFY_BUNDLE := $(SCRIPTS_DIR)/bundle.js
 
-NODE_DEPS = $(COFFEE_CC) $(UGLIFY_JS) $(UGLIFY_CSS) $(BROWSERIFY_CC) \
+NODE_DEPS := $(COFFEE_CC) $(UGLIFY_JS) $(UGLIFY_CSS) $(BROWSERIFY_CC) \
 	$(patsubst %,$(NODE_DIR)/%,$(BROWSERIFY_CONVERSIONS))
 
 # cpan
-HTML_PARSER = $(shell if perl -e 'use HTML::TokeParser::Simple'; then echo; \
+HTML_PARSER := $(shell if perl -e 'use HTML::TokeParser::Simple'; then echo; \
 	else echo "HTML_TokeParser_Simple"; fi) # blank if installed
-PERL_DEPS = $(HTML_PARSER)
+PERL_DEPS := $(HTML_PARSER)
 
 # submodules
 HTMLIZE_DIR := htmlize
