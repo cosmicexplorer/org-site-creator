@@ -149,6 +149,32 @@
           :sitemap-filename sitemap-filename
           :sitemap-title "Site Map"))))
 
+(defun org-set-custom-ids-for-headers ()
+  (let* ((tree (org-element-parse-buffer))
+         (map (org-element-map tree 'headline
+                (lambda (hl)
+                  (org-element-property :begin hl)))))
+    (cl-loop
+     with cur-insertions = 0
+     for hl in map
+     do (progn
+          (goto-char (+ hl cur-insertions))
+          (re-search-forward "[^\\*]")
+          (let* ((title-text
+                  (buffer-substring-no-properties (point) (line-end-position)))
+                 (title-text-replaced
+                  (concat
+                   ":PROPERTIES:\n"
+                   ":CUSTOM_ID: "
+                   (replace-regexp-in-string
+                    "[[:space:]]" "-" title-text)
+                   "\n"
+                   ":END:\n")))
+            (forward-line 1)
+            (line-beginning-position)
+            (insert title-text-replaced)
+            (incf cur-insertions (length title-text-replaced)))))))
+
 (defun publish-org-file-no-cache (file)
   (let ((file-buf (find-file (expand-file-name file))))
     (with-current-buffer file-buf
@@ -167,7 +193,7 @@
                 (file-newer-than-file-p load-file-name file)
                 (file-newer-than-file-p transform-file-links-binary file))
             (progn
-
+              (org-set-custom-ids-for-headers)
               (goto-char (point-min))
               (while (re-search-forward "^#\\+SETUPFILE: \\(.+\\)" nil t)
                 (let ((insert-str (match-string 1)))

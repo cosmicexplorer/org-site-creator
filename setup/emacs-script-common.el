@@ -18,3 +18,5 @@
    (append
     (list beg end transform-file-links-binary t t nil arg)
     (if filename (list filename) nil))))
+
+(require 'cl-lib)
