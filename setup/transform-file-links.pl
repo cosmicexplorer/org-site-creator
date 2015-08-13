@@ -44,6 +44,21 @@ sub remove_file_links {
 
 my $parser = HTML::TokeParser::Simple->new(*STDIN);
 
+my $prewrap_html = <<'END_HTML';
+<head>
+  <style type="text/css">
+    <!--
+      pre > code {
+        white-space: -moz-pre-wrap; /* Mozilla */
+        white-space: -hp-pre-wrap; /* HP printers */
+        white-space: -o-pre-wrap; /* Opera 7 */
+        white-space: -pre-wrap; /* Opera 4-6 */
+        white-space: pre-wrap; /* CSS 2.1 */
+      }
+    -->
+  </style>
+END_HTML
+
 while ( my $token = $parser->get_token ) {
   if ($token->is_start_tag('a')) {
     print "<a";
@@ -58,6 +73,10 @@ while ( my $token = $parser->get_token ) {
       print "\"";
     }
     print ">";
+  }
+  # make code tags wrap around (especially in htmlized files)
+  elsif ($token->is_start_tag('head')) {
+    print $prewrap_html;
   }
   # add code tags after pre tags, and pre tags after code tags
   elsif ($token->is_start_tag('pre')) {
