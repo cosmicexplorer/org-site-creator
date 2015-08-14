@@ -167,7 +167,7 @@
                    ":PROPERTIES:\n"
                    ":CUSTOM_ID: "
                    (replace-regexp-in-string
-                    "[[:space:]]" "-" title-text)
+                    "[[:space:]]+" "-" title-text)
                    "\n"
                    ":END:\n")))
             (forward-line 1)
