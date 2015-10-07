@@ -169,6 +169,7 @@ $(HTMLIZE_OUT) $(COPY_OUT): $(HTMLIZE_IN) $(COPY_IN) $(DEPS)
 # create submodules and dependent packages
 $(SUBMODULE_PROOFS):
 	@git submodule update --init --recursive
+	@git submodule foreach git pull origin master
 
 $(BROWSERIFY_BUNDLE): $(patsubst %,$(NODE_DIR)/%,$(BROWSERIFY_CONVERSIONS)) \
 		$(BROWSERIFY_CC)
