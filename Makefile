@@ -1,4 +1,4 @@
-.PHONY: all clean sweep distclean rebuild serve HTML_TokeParser_Simple html_only
+.PHONY: all clean sweep distclean rebuild serve HTML_TokeParser_Simple html_only js_only
 .DELETE_ON_ERROR:
 
 # utilities
@@ -108,6 +108,8 @@ OUT_DIRS := $(OUT_SCRIPTS_DIR) $(OUT_STYLES_DIR) $(ORG_INFO_OUT_DIR)
 all: $(OUT_PAGES) $(OUT_SCRIPTS) $(OUT_STYLES) $(HTMLIZE_OUT) \
 	$(HTMLIZE_MAKEFILE) $(COPY_OUT) $(ORG_INFO_OUT) | $(OUT_DIRS)
 
+js_only: $(ORG_INFO_OUT)
+
 html_only: $(OUT_PAGES)
 
 $(OUT_DIRS):
@@ -133,8 +135,9 @@ $(OUT_STYLES_DIR)/%.css: $(ORG_INFO_DIR)/%-mini.css | $(OUT_SCRIPTS_DIR)
 	@echo "$< => $@"
 	@cp $< $@
 
+ORG_INFO_DEPS := $(ORG_INFO_DIR)/org-info.js $(ORG_INFO_DIR)/stylesheet.css
 # make the minified versions (note that these are all copied as a batch)
-$(ORG_INFO_OUT): $(ORG_INFO_PROOF) $(ORG_INFO_OUT_DIR)
+$(ORG_INFO_OUT): $(ORG_INFO_DEPS) $(ORG_INFO_OUT_DIR)
 	@$(MAKE) -C $(ORG_INFO_DIR)
 	@for el in $(ORG_INFO_DIR)/*-mini*; do \
 		echo "$$el => $$($(RELIFY_CMD) $$($(SWITCH_DIR_SCRIPT) \
